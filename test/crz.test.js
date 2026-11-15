@@ -112,6 +112,16 @@ test("renomination: ETP moves into the wind and times are equal there", () => {
   assert.equal(e.shiftDir, 1); assert.ok(e.etpShift > 0);
 });
 
+test("renomination: both airports ahead of the route still gives an ETP", () => {
+  const route = C.makeRoute(ofp.points);
+  const WMKP = { id: "WMKP", lat: 5.2971, lon: 100.2769 };
+  const r = C.renominate(route, VTSP, WMKP, { tas: 463, windDir: 96, windKt: 18 });
+  assert.ok(r.etp, r.etpError);
+  const t = (ea) => (C.dist(r.etp, ea) / C.groundSpeed(463, C.bearing(r.etp, ea), 96, 18)) * 60;
+  near(t(VTSP), t(WMKP), 0.01);
+  assert.ok(Math.abs(r.etpShift) < 30);
+});
+
 test("renomination: errors", () => {
   const route = C.makeRoute(ofp.points);
   assert.ok(C.renominate(route, VCBI, VCBI, {}).error);

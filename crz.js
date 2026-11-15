@@ -148,27 +148,27 @@
     const dt = t1 - t2;
     out.dtMin = dt;
     out.formulaShift = (Math.abs(dt) / 2) * (tas / 60);
-    // Along the route, which way is "toward EA1"? Compare distances a little either side of the EDP.
-    const ahead = route.at(Math.min(route.total, edp.s + 5)), behind = route.at(Math.max(0, edp.s - 5));
-    const ea1Behind = dist(behind, ea1) <= dist(ahead, ea1);
-    const towardLonger = dt > 0 ? (ea1Behind ? -1 : 1) : (ea1Behind ? 1 : -1); // -1 = back along the route
-    out.shiftDir = Math.abs(dt) < 0.05 ? 0 : towardLonger;
-
-    // Exact ETP: where the two times are equal. Search outward from the EDP.
+    // Exact ETP: where the two times are equal. Search outward from the EDP in both directions
+    // and take the nearest. (The airport that takes longer is normally "into the wind", but when
+    // both airports lie ahead of the route that rule has no direction, so the search decides.)
     const g = (s) => { const p = route.at(s), a = timeTo(p, ea1), b = timeTo(p, ea2); return a == null || b == null ? NaN : a - b; };
-    let lo = edp.s, hi = edp.s, glo = dt, ghi = dt, found = Math.abs(dt) < 1e-6;
-    for (let step = 10; !found && step <= 800; step += 10) {
-      const s = edp.s + out.shiftDir * step;
-      if (s < 0 || s > route.total) break;
-      const v = g(s);
-      if (Number.isNaN(v)) break;
-      if (v * dt <= 0) { hi = s; ghi = v; found = true; } else { lo = s; glo = v; }
+    let lo = edp.s, hi = edp.s, glo = dt, found = Math.abs(dt) < 1e-6;
+    out.shiftDir = 0;
+    const prev = { "-1": edp.s, "1": edp.s }, dead = { "-1": false, "1": false };
+    for (let step = 10; !found && step <= 800 && !(dead[-1] && dead[1]); step += 10) {
+      for (const dir of [-1, 1]) {
+        if (dead[dir] || found) continue;
+        const s = Math.max(0, Math.min(route.total, edp.s + dir * step)), v = g(s);
+        if (Number.isNaN(v)) { dead[dir] = true; continue; }
+        if (v * dt <= 0) { lo = prev[dir]; hi = s; found = true; out.shiftDir = dir; }
+        else { prev[dir] = s; if (s === 0 || s === route.total) dead[dir] = true; }
+      }
     }
     if (!found) { out.etpError = "Could not find an equal-time point on the route."; return out; }
-    if (Math.abs(dt) >= 1e-6) {
+    if (out.shiftDir !== 0) {
       for (let k = 0; k < 50; k++) {
         const m = (lo + hi) / 2, v = g(m);
-        if (v * glo <= 0) { hi = m; ghi = v; } else { lo = m; glo = v; }
+        if (v * glo <= 0) hi = m; else { lo = m; glo = v; }
       }
     }
     const etp = route.at((lo + hi) / 2);
