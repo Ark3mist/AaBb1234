@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EDTO CRZ</title>
-<meta name="description" content="B737 engine-inop EDTO calculations: ETP weight, altitude capability and critical fuel, offline.">
+<meta name="description" content="B737 EDTO tools: OFP import with route map and alternate renomination, ETP weight, altitude capability and critical fuel, offline.">
 <meta name="theme-color" content="#0f1720">
 <script>try{var t=JSON.parse(localStorage.getItem("edto.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,14 +18,17 @@
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c;
+  --ocean:#cfe2ee; --land:#ece6d3; --coast:#a39a80; --grid:rgba(17,24,39,.12); --halo:#ffffff; --route:#334155;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
+  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1;
 }}
 :root[data-theme="dark"]{
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
+  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -100,6 +103,63 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 .altcard.lrc .alt span{color:#6ee7b7} .altcard.lrc .alt b{color:#a7f3d0}
 .altcard.fix .alt span{color:#fca5a5} .altcard.fix .alt b{color:#fecaca}
 @media (max-width:400px){.altcard .alt b{font-size:17px}.altcard .alt{padding:7px 8px}.altcard .alt span{font-size:11px}.altgrid{gap:8px}.altcard{padding:12px 8px 8px}}
+.ofpbtn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:none}
+.ofpbtn svg{width:16px;height:16px}
+h2>span{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-content:flex-end;text-transform:none;letter-spacing:0}
+button.link.danger{color:var(--err)}
+textarea{width:100%;font:13px ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fphead{font-size:20px;font-weight:700;margin:0 0 2px}
+.fphead small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;margin:10px 0 0;font-size:14px}
+.kv dt{color:var(--muted);font-size:13px} .kv dd{margin:0;overflow-wrap:anywhere}
+.kv dd .mono{font-weight:600}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--accent);font-weight:700;white-space:nowrap}
+.pill.warn{background:transparent;color:var(--warn);border:1px solid var(--warn)}
+.pill.bad{background:transparent;color:var(--err);border:1px solid var(--err)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td.mono,td b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+tr.ps td{color:var(--muted)}
+details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600}
+.mapwrap{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--ocean)}
+#map{display:block;width:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#map:active{cursor:grabbing}
+.zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px}
+.zoomctl button{width:34px;height:34px;padding:0;font-size:17px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+#map .land{fill:var(--land);stroke:var(--coast);stroke-width:.6}
+#map .grat{stroke:var(--grid);stroke-width:1;fill:none}
+#map .gl{font-size:9px;fill:var(--muted)}
+#map .rte{stroke:var(--route);stroke-width:2;fill:none;stroke-linejoin:round}
+#map .seg{stroke:var(--err);stroke-width:4;fill:none;stroke-linecap:round;opacity:.85}
+#map .wp{fill:var(--panel);stroke:var(--route);stroke-width:1.5}
+#map .ring{fill:var(--accent);fill-opacity:.10;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:6 4}
+#map .apt{fill:var(--accent);stroke:var(--halo);stroke-width:1.5}
+#map .end{fill:var(--route);stroke:var(--halo);stroke-width:1.5}
+#map .trk{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
+#map .bis{stroke:#16a34a;stroke-width:1.8;stroke-dasharray:7 5;fill:none}
+#map .pt{stroke:var(--halo);stroke-width:1.5}
+#map .pt.edp{fill:#16a34a} #map .pt.etp{fill:var(--err)} #map .pt.ee{fill:var(--warn)} #map .pt.ofp{fill:none;stroke:var(--muted);stroke-width:1.5}
+#map text{font:600 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:3px;stroke-linejoin:round}
+#map text.k{fill:var(--accent)} #map text.r{fill:var(--err)} #map text.g{fill:#16a34a} #map text.m{fill:var(--muted);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.steps{list-style:none;margin:10px 0 0;padding:0;counter-reset:st;display:grid;gap:10px}
+.steps>li{counter-increment:st;display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:14px;line-height:1.45}
+.steps>li::before{content:counter(st);width:24px;height:24px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
+.steps h4{margin:14px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);grid-column:1/-1}
+.steps>li.h{display:block;counter-increment:none} .steps>li.h::before{display:none}
+.key{display:inline-block;font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.val{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--accent);white-space:nowrap}
+.aptname{font-size:12px;color:var(--muted);margin-top:3px;min-height:1.2em}
+.aptname.bad{color:var(--err)}
+.note{border:1px solid var(--warn);border-left-width:4px;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:13px;line-height:1.4}
+.note.bad{border-color:var(--err)}
+.note b{color:var(--warn)} .note.bad b{color:var(--err)}
+.resbox{padding:10px;border-radius:8px;background:var(--soft);margin-top:10px;font-size:14px}
+.resbox .val{font-size:16px}
 </style>
 </head>
 <body>
@@ -119,13 +179,54 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
       <dd><div class="seg" id="themeSeg" role="radiogroup" aria-label="Appearance"><button type="button" data-theme="device" role="radio">Device</button><button type="button" data-theme="light" role="radio">Light</button><button type="button" data-theme="dark" role="radio">Dark</button></div></dd>
       <dt>Version</dt><dd id="verTxt" class="mono"></dd>
       <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span id="updMsg" class="s"></span></dd>
-      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)</dd>
+      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · MAS EDTO handout Table 1-1</dd>
+      <dt>Credits</dt><dd class="s">PDF.js (Apache 2.0) · airportsdata (MIT) · Natural Earth land outlines · World Magnetic Model 2025</dd>
     </dl>
   </dialog>
 
   <!-- ================= CRZ ================= -->
   <div class="view" data-view="crz" hidden>
-    <section class="empty">Cruise calculations: coming next.</section>
+    <section id="fpSec">
+      <h2>Flight plan <span><button class="ofpbtn" id="ofpPick" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="ofpPasteBtn" type="button">Paste text</button> <button class="link danger" id="ofpClear" type="button" hidden>Clear</button></span></h2>
+      <input type="file" id="ofpFile" accept="application/pdf,.pdf,text/plain,.txt" hidden>
+      <div id="ofpPaste" hidden>
+        <textarea id="ofpText" rows="6" placeholder="Paste the OFP text here" spellcheck="false"></textarea>
+        <div class="btnrow"><button type="button" id="ofpRead">Read pasted text</button><button type="button" id="ofpPasteX">Cancel</button></div>
+      </div>
+      <div class="msg" id="ofpMsg" hidden></div>
+      <div class="hint" id="fpEmpty" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the header, the route, the nav log, the coordinates list, the wind table and the EDTO information.</div>
+      <div id="fpBody" hidden></div>
+    </section>
+
+    <section id="mapSec" hidden>
+      <h2>Map <span class="s" id="mapSub"></span></h2>
+      <div class="mapwrap">
+        <svg id="map" role="img" aria-label="Route map with 60 minute rings around the EDTO alternates"></svg>
+        <div class="zoomctl"><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zOut" aria-label="Zoom out">−</button><button type="button" id="zFit" aria-label="Fit route" title="Fit route">⤢</button></div>
+      </div>
+      <div class="legend" id="mapLegend"></div>
+    </section>
+
+    <section id="renSec" hidden>
+      <h2>Renominate EDTO alternates <span><button class="link" id="renReset" type="button">Reset to OFP</button></span></h2>
+      <div class="r2">
+        <div><label for="ea1">En-route alternate 1</label><input id="ea1" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO"><div class="aptname" id="ea1Name"></div></div>
+        <div><label for="ea2">En-route alternate 2</label><input id="ea2" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO"><div class="aptname" id="ea2Name"></div></div>
+      </div>
+      <div id="renOut"></div>
+    </section>
+
+    <section id="edtoPtSec" hidden>
+      <h2>EDTO points in the OFP</h2>
+      <div class="tablewrap"><table id="edtoPtTbl"></table></div>
+      <div class="hint" id="edtoPtHint"></div>
+    </section>
+
+    <section id="wpSec" hidden>
+      <details><summary id="wpSum">Waypoints</summary>
+        <div class="tablewrap" style="margin-top:8px"><table id="wpTbl"></table></div>
+      </details>
+    </section>
   </div>
 
   <!-- ================= EDTO ================= -->
@@ -359,12 +460,15 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
     curTab = name; store.set("edto.tab", name);
     try { history.replaceState(null, "", "#" + name); } catch (e) {}
     window.scrollTo(0, tabScroll[name] || 0);
+    window.dispatchEvent(new CustomEvent("tabshow", { detail: name }));
   }
   document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("click", () => {
     if (b.dataset.tab === curTab) window.scrollTo({ top: 0, behavior: "smooth" }); else showTab(b.dataset.tab);
   }));
   window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
   showTab(location.hash.slice(1) || store.get("edto.tab") || "edto");
+  // used by the CRZ tab script below
+  window.APP = { $, store, showTab, setEdto(o){ Object.assign(state, o); syncFields(); save(); calc(); } };
 
   // ---------- settings: appearance ----------
   $("setOpen").addEventListener("click", () => $("setDlg").showModal());
@@ -380,7 +484,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-03-26";
+  const APP_VERSION = "1-04-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -414,6 +518,489 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
+})();
+</script>
+<script src="wmm.js"></script>
+<script src="airports.js"></script>
+<script src="world50.js"></script>
+<script src="crz.js"></script>
+<script>
+// ================= CRZ tab: OFP import, map, EDTO alternate renomination =================
+(function(){
+  "use strict";
+  const { $, store, showTab, setEdto } = window.APP;
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pad = (n, w = 2) => String(n).padStart(w, "0");
+  const deg = (d) => pad(Math.round(CRZ.norm360(d)) % 360, 3) + "°";
+  const nm = (d) => Math.round(d).toLocaleString("en-US") + " NM";
+  const hmm = (min) => Math.floor(min / 60) + ":" + pad(Math.round(min) % 60);
+  const minTxt = (min) => (min >= 60 ? hmm(min) + " h" : Math.round(min) + " min");
+  const num = (v) => (v === "" || v == null ? NaN : Number(v));
+  // Maximum diversion distance, still air ISA, M0.79/310 kt at 75,000 kg (MAS EDTO handout, Table 1-1)
+  const DIV_NM = { 60: 420, 120: 820, 180: 1230 };
+
+  // ---------- airports ----------
+  let aptIndex = null;
+  function airport(code) {
+    code = String(code || "").trim().toUpperCase();
+    if (!code) return null;
+    if (!aptIndex) {
+      aptIndex = new Map();
+      for (const row of (window.SolatAirports ? window.SolatAirports.data : "").split("\n")) {
+        const f = row.split("|");
+        if (f.length < 7) continue;
+        const a = { id: f[0] || f[1], icao: f[0], iata: f[1], name: f[2], city: f[3], country: f[4], lat: +f[5], lon: +f[6] };
+        if (f[0]) aptIndex.set(f[0], a);
+        if (!aptIndex.has(f[1])) aptIndex.set(f[1], a);
+      }
+    }
+    return aptIndex.get(code) || null;
+  }
+  const aptLabel = (a) => (a ? esc(a.name + (a.city && !a.name.includes(a.city) ? ", " + a.city : "")) : "");
+  const magVar = (lat, lon) => { try { return window.SolatWMM.declination(lat, lon, 0, window.SolatWMM.yearOf(Date.now())); } catch (e) { return 0; } };
+
+  // ---------- state ----------
+  let ofp = store.get("crz.ofp");
+  let ren = store.get("crz.ren") || {};
+  let route = null, calc = null;       // calc = current renomination result plus derived points
+
+  // ---------- OFP import (PDF text layer or pasted text) ----------
+  const loadScript = (src) => new Promise((ok, bad) => {
+    const el = document.createElement("script"); el.src = src; el.onload = ok;
+    el.onerror = () => bad(new Error("Could not load " + src)); document.head.appendChild(el);
+  });
+  async function pdfToText(file) {
+    if (!window.pdfjsLib) {
+      // worker code runs on the main thread: works offline
+      await loadScript("vendor/pdfjs/pdf.worker.min.js");
+      await loadScript("vendor/pdfjs/pdf.min.js");
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdfjs/pdf.worker.min.js";
+    }
+    const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    const all = [];
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const tc = await (await pdf.getPage(n)).getTextContent();
+      all.push(tc.items.filter((it) => it.str && it.str.trim() !== ""));
+    }
+    // rebuild text lines from positioned glyph runs (OFPs use a fixed-width font)
+    const flat = all.flat();
+    const widths = flat.map((it) => it.width / it.str.length).filter((w) => w > 0).sort((a, b) => a - b);
+    const cw = widths.length ? widths[Math.floor(widths.length / 2)] : 6;
+    const x0 = flat.reduce((m, it) => Math.min(m, it.transform[4]), Infinity);
+    const pages = [];
+    for (const items of all) {
+      const rows = new Map();
+      for (const it of items) {
+        const y = Math.round(it.transform[5]);
+        let key = [...rows.keys()].find((k) => Math.abs(k - y) <= 2);
+        if (key === undefined) { key = y; rows.set(key, []); }
+        rows.get(key).push(it);
+      }
+      const lines = [...rows.entries()].sort((a, b) => b[0] - a[0]).map(([, its]) => {
+        its.sort((a, b) => a.transform[4] - b.transform[4]);
+        let line = "";
+        for (const it of its) {
+          const col = Math.round((it.transform[4] - x0) / cw);
+          line += line.length < col ? " ".repeat(col - line.length) : (line && !line.endsWith(" ") ? " " : "");
+          line += it.str;
+        }
+        return line;
+      });
+      pages.push(lines.join("\n"));
+    }
+    return pages.join("\n\n");
+  }
+  function ofpMsg(t, bad) { const el = $("ofpMsg"); el.hidden = !t; el.textContent = t || ""; el.style.color = bad ? "var(--err)" : ""; }
+  function loadText(text) {
+    const o = CRZ.parseOFP(text);
+    if (o.points.length < 2) { ofpMsg("Could not read a route from this: no COORDINATES INFORMATION section found. Is it the full OFP?", true); return false; }
+    ofp = o; ren = {};
+    store.set("crz.ofp", ofp); store.set("crz.ren", ren);
+    ofpMsg(o.warnings.length ? "Read with warnings: " + o.warnings.join(" ") : "");
+    view = null;
+    renderAll();
+    return true;
+  }
+  $("ofpPick").addEventListener("click", () => $("ofpFile").click());
+  $("ofpFile").addEventListener("change", async () => {
+    const f = $("ofpFile").files[0]; if (!f) return;
+    ofpMsg("Reading " + f.name + "…");
+    try {
+      const isPdf = /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name);
+      loadText(isPdf ? await pdfToText(f) : await f.text());
+    } catch (e) { ofpMsg("Could not read the file (" + (e && e.message || e) + "). Try Paste text.", true); }
+    $("ofpFile").value = "";
+  });
+  $("ofpPasteBtn").addEventListener("click", () => { $("ofpPaste").hidden = false; $("ofpText").focus(); });
+  $("ofpPasteX").addEventListener("click", () => { $("ofpPaste").hidden = true; });
+  $("ofpRead").addEventListener("click", () => { if (loadText($("ofpText").value)) { $("ofpPaste").hidden = true; $("ofpText").value = ""; } });
+  $("ofpClear").addEventListener("click", () => { ofp = null; ren = {}; store.set("crz.ofp", null); store.set("crz.ren", ren); ofpMsg(""); renderAll(); });
+
+  // ---------- flight plan summary ----------
+  function renderSummary() {
+    const has = !!ofp;
+    $("fpEmpty").hidden = has; $("fpBody").hidden = !has; $("ofpClear").hidden = !has;
+    ["mapSec", "renSec", "edtoPtSec", "wpSec"].forEach((id) => { $(id).hidden = !has; });
+    if (!has) return;
+    const o = ofp, dep = airport(o.depIcao), dst = airport(o.destIcao), e = o.edto || {};
+    const mo = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const rows = [];
+    const row = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
+    row("Departure", `<b class="mono">${esc(o.depIcao)}${o.depIata ? "/" + esc(o.depIata) : ""}</b> ${aptLabel(dep)}${o.std ? ` · STD <span class="mono">${esc(o.std)}</span> UTC` : ""}`);
+    row("Destination", `<b class="mono">${esc(o.destIcao)}${o.destIata ? "/" + esc(o.destIata) : ""}</b> ${aptLabel(dst)}${o.sta ? ` · STA <span class="mono">${esc(o.sta)}</span> UTC` : ""}`);
+    row("Cruise level", o.cruiseFL != null ? `<b class="mono">FL${o.cruiseFL}</b>${o.levelPlan ? ` <span class="s">(${esc(o.levelPlan)})</span>` : ""}` : "");
+    row("Speed", [o.mach ? `<b class="mono">M${o.mach.toFixed(2).slice(1)}</b>` : "", o.costIndex != null ? `CI ${o.costIndex}` : "", o.cruiseTas ? `TAS <span class="mono">${o.cruiseTas}</span> kt` : "", o.speedPlan ? `<span class="s">(${esc(o.speedPlan)})</span>` : ""].filter(Boolean).join(" · "));
+    row("Distance", [o.grdDist ? `<span class="mono">${o.grdDist}</span> NM ground` : "", o.airDist ? `<span class="mono">${o.airDist}</span> NM air` : "", o.fltMin ? `flight time <span class="mono">${hmm(o.fltMin)}</span>` : ""].filter(Boolean).join(" · "));
+    row("Wind / ISA", [o.avgWc != null ? `average ${Math.abs(o.avgWc)} kt ${o.avgWc < 0 ? "headwind" : "tailwind"}` : "", o.avgIsa != null ? `ISA ${o.avgIsa >= 0 ? "+" : "−"}${Math.abs(o.avgIsa)} °C` : ""].filter(Boolean).join(" · "));
+    row("Route", o.route ? `<span class="mono" style="font-size:13px">${esc(o.route)}</span>` : "");
+    row("Waypoints", `${o.points.filter((p) => !p.pseudo).length} fixes, ${o.points.filter((p) => p.pseudo).length} plan points`);
+    const eas = (e.alternates || []).map((c) => `<b class="mono">${esc(c)}</b> ${aptLabel(airport(c))}`).join("<br>");
+    row("EDTO alternates", eas ? eas : (e.planned === false ? "Not an EDTO flight" : `<span class="pill warn">none found</span>`));
+    row("EDTO rule", e.ruleMin ? `<span class="mono">${e.ruleMin}</span> min${e.oneHourNm ? ` · 60 min = <span class="mono">${e.oneHourNm}</span> NM` : ""}` : "");
+    row("En-route adequate", e.adequate && e.adequate.length ? `<span class="mono" style="font-size:13px">${e.adequate.map(esc).join(" ")}</span>` : "");
+    $("fpBody").innerHTML =
+      `<p class="fphead">${esc(o.flight || "Flight")} · ${esc(o.depIcao)} → ${esc(o.destIcao)}<small>${o.date ? `${pad(o.date.d)} ${mo[o.date.mo]} ${o.date.y}` : ""}${o.acType ? " · " + esc(o.acType) : ""}</small></p><dl class="kv">${rows.join("")}</dl>`;
+
+    // EDTO points table
+    const pts = e.points || [];
+    $("edtoPtSec").hidden = !pts.length;
+    if (pts.length) {
+      $("edtoPtTbl").innerHTML = "<thead><tr><th>Point</th><th>Airports</th><th>ELTM</th><th>Dist NM</th><th>Crit fuel</th><th>FOB</th><th>Margin</th></tr></thead><tbody>" +
+        pts.map((p) => {
+          const mg = Math.round((p.fob - p.critFuel) * 10) / 10;
+          return `<tr><td><b>${esc(p.name)}</b></td><td class="mono">${p.airports.map(esc).join("/")}</td><td class="mono">${hmm(p.eltm)}</td><td class="mono">${p.dist.join("/")}</td><td class="mono">${p.critFuel.toFixed(1)}</td><td class="mono">${p.fob.toFixed(1)}</td><td class="mono" style="color:${mg < 0 ? "var(--err)" : "inherit"}">${mg >= 0 ? "+" : "−"}${Math.abs(mg).toFixed(1)}</td></tr>`;
+        }).join("") + "</tbody>";
+      $("edtoPtHint").textContent = "As planned by dispatch, fuel in 1000 kg. These points are only valid for the OFP's alternates" +
+        (e.speeds ? ". Speed schedules: " + e.speeds.map((s) => `${s.code} = ${s.what} ${s.speed}`).join(", ") + "." : ".");
+    }
+    // waypoints table
+    $("wpSum").textContent = `Waypoints (${o.points.length})`;
+    $("wpTbl").innerHTML = "<thead><tr><th>WPT</th><th>AWY</th><th>FL</th><th>ELTM</th><th>Dist</th><th>W/V</th><th>EFOB</th><th>Position</th></tr></thead><tbody>" +
+      o.points.map((p) => `<tr class="${p.pseudo ? "ps" : ""}"><td><b>${esc(p.name)}</b></td><td class="mono">${esc(p.awy || "")}</td><td class="mono">${esc(p.fl || "")}</td><td class="mono">${p.eltm != null ? hmm(p.eltm) : ""}</td><td class="mono">${p.dist ?? ""}</td><td class="mono">${p.windDir != null ? pad(p.windDir, 3) + "/" + pad(p.windKt, 3) : ""}</td><td class="mono">${p.efob ?? ""}</td><td class="mono">${CRZ.fmtLatLon(p)}</td></tr>`).join("") + "</tbody>";
+  }
+
+  // ---------- renomination ----------
+  const oneHourNm = () => (ofp && ofp.edto && ofp.edto.oneHourNm) || DIV_NM[60];
+  const maxDivNm = () => DIV_NM[(ofp && ofp.edto && ofp.edto.ruleMin) || 120] || null;
+  const ofpAlts = () => ((ofp && ofp.edto && ofp.edto.alternates) || []);
+  function renDefaults() {
+    const a = ofpAlts();
+    if (ren.ea1 == null) ren.ea1 = a[0] || "";
+    if (ren.ea2 == null) ren.ea2 = a[1] || "";
+  }
+  const unchanged = () => { const a = ofpAlts(); return a.length >= 2 && ren.ea1 === a[0] && ren.ea2 === a[1]; };
+  /** Wind rows from the OFP at the plan point nearest to p. */
+  function windsNear(p) {
+    let best = null;
+    for (const w of ofp.points) {
+      const rows = ofp.winds && ofp.winds[w.name];
+      if (!rows || !rows.length) continue;
+      const d = CRZ.dist(p, w);
+      if (!best || d < best.d) best = { d, name: w.name, rows, tas: w.tas };
+    }
+    return best;
+  }
+  function compute() {
+    calc = null; route = null;
+    if (!ofp) return;
+    route = CRZ.makeRoute(ofp.points);
+    renDefaults();
+    const a1 = airport(ren.ea1), a2 = airport(ren.ea2);
+    calc = { a1, a2, R: oneHourNm() };
+    if (!a1 || !a2) return;
+    const opt = { magVar };
+    let r = CRZ.renominate(route, a1, a2, Object.assign({ windKt: 0 }, opt));
+    calc.r = r;
+    if (r.error) return;
+    // wind and TAS: from the OFP at the point nearest the EDP, unless typed in
+    const near = windsNear(r.edp);
+    calc.near = near;
+    if (near) {
+      const cruiseRow = near.rows.find((w) => w.cruise) || near.rows.reduce((x, y) => (Math.abs(y.fl - (ofp.cruiseFL || 350)) < Math.abs(x.fl - (ofp.cruiseFL || 350)) ? y : x));
+      calc.cruiseLevel = cruiseRow.fl;
+      if (!near.rows.some((w) => w.fl === ren.level)) ren.level = cruiseRow.fl;
+      if (!ren.manual) {
+        const w = near.rows.find((x) => x.fl === ren.level);
+        ren.windDir = w.dir; ren.windKt = w.kt;
+        ren.tas = w.fl <= 150 && ofp.edto && ofp.edto.divTas ? ofp.edto.divTas : (near.tas || ofp.cruiseTas || 480);
+      }
+    } else if (!ren.manual && ren.tas == null) { ren.windDir = 0; ren.windKt = 0; ren.tas = ofp.cruiseTas || 480; }
+    r = CRZ.renominate(route, a1, a2, Object.assign({ tas: num(ren.tas), windDir: num(ren.windDir), windKt: num(ren.windKt) }, opt));
+    calc.r = r;
+    // which alternate is behind us at the EDP, and the entry / exit points of the 60 min rings
+    const s = r.edp.s, back = route.at(Math.max(0, s - 5)), fwd = route.at(Math.min(route.total, s + 5));
+    const firstIsBehind = CRZ.dist(back, a1) <= CRZ.dist(fwd, a1);
+    calc.behind = firstIsBehind ? a1 : a2; calc.ahead = firstIsBehind ? a2 : a1;
+    if (r.edpDist1 > calc.R) {
+      const out = CRZ.ringCrossings(route, calc.behind, calc.R).filter((x) => x.exit && x.s < s);
+      const inn = CRZ.ringCrossings(route, calc.ahead, calc.R).filter((x) => !x.exit && x.s > s);
+      calc.eep = out.length ? out[out.length - 1] : null;
+      calc.exp = inn.length ? inn[0] : null;
+    } else calc.noSegment = true;
+  }
+
+  function renderRen() {
+    if (!ofp) return;
+    $("ea1").value = ren.ea1 || ""; $("ea2").value = ren.ea2 || "";
+    const nameOf = (id, code, a) => { const el = $(id); el.className = "aptname" + (code && !a ? " bad" : ""); el.innerHTML = a ? aptLabel(a) : code ? (code.length < 3 ? "" : "Not in the airport list") : ""; };
+    nameOf("ea1Name", ren.ea1, calc && calc.a1); nameOf("ea2Name", ren.ea2, calc && calc.a2);
+    $("renReset").hidden = unchanged() && !ren.manual && !ren.eta1 && !ren.eta2;
+    const el = $("renOut");
+    if (!calc || !calc.a1 || !calc.a2) { el.innerHTML = `<div class="hint">Enter two airports (ICAO or IATA code) to see the 60 minute rings and how to find the new ETP.</div>`; return; }
+    const r = calc.r, a1 = calc.a1, a2 = calc.a2;
+    if (r.error) { el.innerHTML = `<div class="note bad"><b>No EDP.</b> ${esc(r.error)}</div>`; return; }
+    const K = (s) => `<span class="key">${esc(s)}</span>`, V = (s) => `<span class="val">${s}</span>`;
+    const f1 = a2.id.slice(0, 3) + "01", f2 = a2.id.slice(0, 3) + "02", f3 = a2.id.slice(0, 3) + "03";
+    const halfN = Math.round(r.half), radDist = Math.round(r.radialDist);
+    const typed = CRZ.norm360(Math.round(r.trackM) + (r.side === "right" ? 90 : -90));   // what the handout arithmetic gives
+    const exact = Math.round(r.radialM) % 360;
+    const legTxt = (l) => (l.before && l.after ? `${K(l.before.name)} and ${K(l.after.name)}` : "the two waypoints either side");
+    const max = maxDivNm(), rule = (ofp.edto && ofp.edto.ruleMin) || 120;
+    const lvlOpts = calc.near ? calc.near.rows.slice().sort((x, y) => y.fl - x.fl).map((w) =>
+      `<option value="${w.fl}"${w.fl === ren.level ? " selected" : ""}>FL${pad(w.fl, 3)} · ${pad(w.dir, 3)}/${pad(w.kt, 3)}${w.fl === calc.cruiseLevel ? " · cruise" : ""}</option>`).join("") : "";
+
+    let h = "";
+    // headline
+    if (calc.noSegment) h += `<div class="note"><b>No EDTO segment between these two.</b> The route stays within 60 min (${calc.R} NM) of ${esc(a1.id)} or ${esc(a2.id)}: at the equal-distance point each is ${nm(r.edpDist1)} away.</div>`;
+    if (max && r.edpDist1 > max) h += `<div class="note bad"><b>Outside the ${rule} min area.</b> The equal-distance point is ${nm(r.edpDist1)} from both airports; the maximum diversion distance is ${nm(max)} (still air, ISA). These two cannot cover this route.</div>`;
+    else if (max && r.edpDist1 > calc.R) h += `<div class="hint">Farthest point from both airports: ${nm(r.edpDist1)}, inside the ${rule} min limit of ${nm(max)} (still air, ISA).</div>`;
+
+    h += `<ol class="steps">`;
+    h += `<li class="h"><h4>Step 1 · Suitability</h4></li>`;
+    h += `<li><div>Check the latest weather and NOTAMs for ${K(a1.id)} and ${K(a2.id)} before using them. The app cannot check this.</div></li>`;
+
+    h += `<li class="h"><h4>Step 2 · Equal distance point (EDP)</h4></li>`;
+    h += `<li><div><b>LEGS</b>, last page: enter ${K(a1.id)} then ${K(a2.id)} below it. <b>Do not execute.</b> Note the track and distance from ${esc(a1.id)} to ${esc(a2.id)}: expect about ${V(deg(r.trackM))} / ${V(nm(r.trackDist))}. <span class="s">(${deg(r.trackT)} true)</span></div></li>`;
+    h += `<li><div>Half the distance: ${Math.round(r.trackDist)} ÷ 2 = ${V(halfN + " NM")}. Type ${K(a2.id + "/-" + halfN)} and put it between ${esc(a1.id)} and ${esc(a2.id)}. This makes the halfway fix, named like ${K(f1)}. <span class="s">(${CRZ.fmtLatLon(r.mid)})</span></div></li>`;
+    h += `<li><div>Line-select ${K(f1)} into the <b>FIX</b> page (1L), then erase ${esc(a1.id)} and ${esc(a2.id)} from LEGS.</div></li>`;
+    h += `<li><div>The route is on the <b>${r.side}</b> of the ${esc(a1.id)}→${esc(a2.id)} track, so ${r.side === "right" ? "add" : "subtract"} 90°: ${Math.round(r.trackM)} ${r.side === "right" ? "+" : "−"} 90 = ${V(pad(typed, 3) + "°")}. Enter ${K(pad(typed, 3))} on a FIX line. A dashed line appears, crossing the route about ${V(radDist + " NM")} from ${esc(f1)}.${Math.abs(((typed - exact + 540) % 360) - 180) >= 2 ? ` <span class="s">(the exact 90° line at the fix is ${pad(exact, 3)}°; the track turns slightly along a long great circle)</span>` : ""}</div></li>`;
+    h += `<li><div>Line-select the radial line to copy it to the scratchpad, go to <b>LEGS</b> and put it between ${legTxt(r.edpLeg)}. This makes ${K(f2)}: the <b>EDP</b>.<div class="resbox">EDP ${V(CRZ.fmtLatLon(r.edp))}<br>${V(nm(r.edpDist1))} to each airport</div></div></li>`;
+
+    h += `<li class="h"><h4>Step 3 · Equal time point (ETP)</h4></li>`;
+    h += `<li><div>Check the winds are in <b>RTE DATA</b>. Put ${K(a1.id)} under ${K(f2)}, press RTE DATA, note its ETA, then ERASE. Repeat with ${K(a2.id)}. Enter the two ETAs here:
+      <div class="r2"><div><label for="eta1">FMC ETA ${esc(a1.id)}</label><input id="eta1" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta1 || "")}"></div><div><label for="eta2">FMC ETA ${esc(a2.id)}</label><input id="eta2" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta2 || "")}"></div></div>
+      <div id="etaOut"></div></div></li>`;
+    h += `<li><div>Until you have the FMC ETAs, this is the app's estimate, using one wind for both diversions:
+      <label for="rLvl">OFP wind near the EDP</label><select id="rLvl"${lvlOpts ? "" : " disabled"}>${lvlOpts || "<option>no wind table</option>"}</select>
+      <div class="r2"><div><label for="rWd">Wind °T / kt</label><div class="inbtn"><input id="rWd" class="mono" inputmode="numeric" maxlength="3" value="${Number.isFinite(num(ren.windDir)) ? pad(num(ren.windDir), 3) : ""}" aria-label="Wind direction"><input id="rWs" class="mono" inputmode="numeric" maxlength="3" value="${ren.windKt ?? ""}" aria-label="Wind speed" style="width:64px"></div></div><div><label for="rTas">TAS kt</label><input id="rTas" class="mono" inputmode="numeric" maxlength="3" value="${ren.tas ?? ""}"></div></div>
+      ${calc.near ? `<div class="s" style="margin-top:4px">Wind from the OFP at ${esc(calc.near.name)}.</div>` : ""}
+      <div id="estOut"></div></div></li>`;
+    h += `</ol>`;
+    h += `<div class="note"><b>Check which wind you use.</b> The FMC ETAs are at cruise level and cruise speed. The OFP's own ETP is for the critical case: one engine out and depressurised, about ${ofp.edto && ofp.edto.divTas ? ofp.edto.divTas + " kt TAS" : "310 KIAS"} near FL100, where the wind can be the opposite of the cruise wind. Pick the FL100 wind above to see that case.</div>`;
+    h += `<div class="btnrow"><button type="button" id="toCf">Check critical fuel for the ETP</button></div><div class="hint" id="toCfHint"></div>`;
+    el.innerHTML = h;
+
+    // live parts
+    const estimate = () => {
+      const o = $("estOut"), rr = calc.r;
+      if (rr.etpError || !rr.etp) { o.innerHTML = `<div class="note bad"><b>No ETP.</b> ${esc(rr.etpError || "")}</div>`; return; }
+      const longer = rr.dtMin > 0 ? a1 : a2, dir = rr.shiftDir < 0 ? "back" : "ahead", sh = Math.round(Math.abs(rr.etpShift)), fsh = Math.round(rr.formulaShift);
+      const still = Math.abs(rr.dtMin) < 0.5;
+      o.innerHTML = `<div class="resbox">Time from EDP: ${esc(a1.id)} ${V(minTxt(rr.t1))}, ${esc(a2.id)} ${V(minTxt(rr.t2))}` +
+        (still ? `<br>Less than half a minute apart: the EDP is the ETP.` :
+          `<br>Difference ${V(Math.abs(rr.dtMin).toFixed(1) + " min")}; formula ${Math.abs(rr.dtMin).toFixed(1)} ÷ 2 × ${rr.nmPerMin.toFixed(1)} NM/min = ${V(Math.round(rr.formulaShift) + " NM")}` +
+          `<br>Move <b>into the wind</b>: toward ${esc(longer.id)}, which takes longer, so ${dir} along the route. Type ${K(f2 + "/" + (rr.shiftDir < 0 ? "-" : "") + fsh)} ${rr.shiftDir < 0 ? "before" : "after"} ${esc(f2)} to make ${K(f3)}, then delete ${esc(f2)}.`) +
+        `<br>Equal time works out at ${V(CRZ.fmtLatLon(rr.etp))}${still ? "" : `, ${V(sh + " NM")} ${dir} of the EDP`}<br>${esc(a1.id)} ${V(nm(rr.etpDist1))} · ${esc(a2.id)} ${V(nm(rr.etpDist2))} · ${V(minTxt(rr.etpTime))} to either` +
+        `</div><div class="s" style="margin-top:6px">Then repeat the ETA check from ${esc(f3)}: both ETAs should match. If not, move it 1 or 2 NM more.</div>`;
+      $("toCfHint").textContent = `Opens EDTO › Critical fuel with the longer distance from the ETP (${nm(Math.max(rr.etpDist1, rr.etpDist2))}). Set the weight, wind and ISA there.`;
+    };
+    const etaCalc = () => {
+      // FMC ETAs are at cruise, so the formula uses the cruise TAS, whatever the estimate below uses
+      const t = (calc.near && calc.near.tas) || ofp.cruiseTas || 480;
+      const s = CRZ.shiftFromEtas(ren.eta1, ren.eta2, t), o = $("etaOut");
+      if (!s) { o.innerHTML = ""; return; }
+      const longer = s.longer === 1 ? a1 : a2;
+      const back = (longer === calc.behind);
+      o.innerHTML = `<div class="resbox">` + (s.longer === 0 ? `Same ETA: the EDP is the ETP.` :
+        `Difference ${V(Math.abs(s.dtMin) + " min")} ÷ 2 × ${(t / 60).toFixed(1)} NM/min <span class="s">(cruise TAS ${t} kt)</span> = ${V(Math.round(s.shift) + " NM")}<br>${esc(longer.id)} takes longer, so move ${back ? "back" : "ahead"} along the route: type ${K(f2 + "/" + (back ? "-" : "") + Math.round(s.shift))} to make ${K(f3)}, then delete ${esc(f2)}.`) + `</div>`;
+    };
+    estimate(); etaCalc();
+    const live = () => { store.set("crz.ren", ren); compute(); estimate(); etaCalc(); drawMap(); $("renReset").hidden = false; };
+    $("eta1").addEventListener("input", (e) => { ren.eta1 = e.target.value; store.set("crz.ren", ren); etaCalc(); $("renReset").hidden = false; });
+    $("eta2").addEventListener("input", (e) => { ren.eta2 = e.target.value; store.set("crz.ren", ren); etaCalc(); $("renReset").hidden = false; });
+    $("rWd").addEventListener("input", (e) => { ren.windDir = e.target.value; ren.manual = true; live(); });
+    $("rWs").addEventListener("input", (e) => { ren.windKt = e.target.value; ren.manual = true; live(); });
+    $("rTas").addEventListener("input", (e) => { ren.tas = e.target.value; ren.manual = true; live(); });
+    $("rLvl").addEventListener("change", (e) => { ren.level = +e.target.value; ren.manual = false; store.set("crz.ren", ren); compute(); renderRen(); drawMap(); });
+    $("toCf").addEventListener("click", () => {
+      const rr = calc.r; if (!rr.etp) return;
+      setEdto({ calc: "cf", dist: String(Math.round(Math.max(rr.etpDist1, rr.etpDist2))) });
+      showTab("edto");
+    });
+  }
+  const onEa = (k) => (e) => {
+    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); e.target.value = v;
+    ren[k] = v; ren.manual = false; ren.eta1 = ren.eta2 = "";
+    store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap();
+  };
+  $("ea1").addEventListener("input", onEa("ea1"));
+  $("ea2").addEventListener("input", onEa("ea2"));
+  $("renReset").addEventListener("click", () => { ren = {}; store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap(); });
+
+  // ---------- map ----------
+  let LAND = null, view = null, proj = null, raf = 0;
+  function land() {
+    if (LAND || !window.WORLD_LAND_50) return LAND || [];
+    LAND = window.WORLD_LAND_50.map((d) => {
+      const pts = []; let x = 0, y = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (let i = 0; i < d.length; i += 2) {
+        x += d[i]; y += d[i + 1];
+        const lon = x / 100, lat = y / 100; pts.push(lon, lat);
+        if (lon < x0) x0 = lon; if (lon > x1) x1 = lon; if (lat < y0) y0 = lat; if (lat > y1) y1 = lat;
+      }
+      return { pts, x0, x1, y0, y1 };
+    });
+    return LAND;
+  }
+  function circle(c, radius) { const out = []; for (let b = 0; b <= 360; b += 4) out.push(CRZ.dest(c, b, radius)); return out; }
+  function drawMap() { cancelAnimationFrame(raf); raf = requestAnimationFrame(drawNow); }
+  function drawNow() {
+    const svg = $("map");
+    if (!ofp || !route || $("mapSec").hidden) return;
+    const W = svg.parentElement.clientWidth;
+    if (!W) return;                                    // tab not visible yet
+    const H = Math.round(Math.max(300, Math.min(560, W * 0.8)));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+
+    const rings = [];
+    const same = unchanged();
+    const ringApts = same ? ofpAlts().map(airport).filter(Boolean) : [calc && calc.a1, calc && calc.a2].filter(Boolean);
+    ringApts.forEach((a) => rings.push({ a, pts: circle(a, calc.R) }));
+
+    // projection: equirectangular about the middle of the route (fine for a regional map)
+    if (!proj) {
+      const lats = ofp.points.map((p) => p.lat), lat0 = (Math.min(...lats) + Math.max(...lats)) / 2, lon0 = ofp.points[Math.floor(ofp.points.length / 2)].lon;
+      proj = { lat0, lon0, k: Math.cos(lat0 * Math.PI / 180) };
+    }
+    const P = (p) => [(((p.lon - proj.lon0 + 540) % 360) - 180) * proj.k, -(p.lat - proj.lat0)];
+    if (!view) {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      const grow = (p) => { const [x, y] = P(p); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; };
+      ofp.points.forEach(grow); rings.forEach((r) => r.pts.forEach(grow));
+      view = { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: Math.min(W / ((x1 - x0) * 1.06 || 1), H / ((y1 - y0) * 1.06 || 1)), fit: true };
+    }
+    const S = (p) => { const [x, y] = P(p); return [W / 2 + (x - view.cx) * view.z, H / 2 + (y - view.cy) * view.z]; };
+    const path = (pts) => pts.map((p, i) => { const [x, y] = S(p); return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); }).join("");
+    const out = [];
+
+    // land
+    const lonW = proj.lon0 + (view.cx - W / 2 / view.z) / proj.k, lonE = proj.lon0 + (view.cx + W / 2 / view.z) / proj.k;
+    const latN = proj.lat0 - (view.cy - H / 2 / view.z), latS = proj.lat0 - (view.cy + H / 2 / view.z);
+    let d = "";
+    for (const r of land()) {
+      if (r.x1 < lonW || r.x0 > lonE || r.y1 < latS || r.y0 > latN) continue;
+      if ((r.x1 - r.x0) * view.z < 1.5 && (r.y1 - r.y0) * view.z < 1.5) continue;
+      let lx = null, ly = null, first = true;
+      for (let i = 0; i < r.pts.length; i += 2) {
+        const [x, y] = S({ lon: r.pts[i], lat: r.pts[i + 1] });
+        if (lx != null && Math.abs(x - lx) < 0.8 && Math.abs(y - ly) < 0.8 && i < r.pts.length - 2) continue;
+        d += (first ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1); first = false; lx = x; ly = y;
+      }
+      d += "Z";
+    }
+    out.push(`<path class="land" d="${d}"/>`);
+
+    // graticule
+    const span = Math.max(lonE - lonW, latN - latS), step = span > 60 ? 20 : span > 25 ? 10 : span > 10 ? 5 : span > 4 ? 2 : 1;
+    for (let lo = Math.ceil(lonW / step) * step; lo <= lonE; lo += step) { const [x] = S({ lon: lo, lat: 0 }); out.push(`<path class="grat" d="M${x.toFixed(1)} 0V${H}"/><text class="gl" x="${(x + 3).toFixed(1)}" y="${H - 4}">${Math.abs(lo)}${lo < 0 ? "W" : "E"}</text>`); }
+    for (let la = Math.ceil(latS / step) * step; la <= latN; la += step) { const [, y] = S({ lon: proj.lon0, lat: la }); out.push(`<path class="grat" d="M0 ${y.toFixed(1)}H${W}"/><text class="gl" x="3" y="${(y - 3).toFixed(1)}">${Math.abs(la)}${la < 0 ? "S" : "N"}</text>`); }
+
+    // 60 min rings
+    rings.forEach((r) => out.push(`<path class="ring" d="${path(r.pts)}Z"/>`));
+
+    // labels are placed after all shapes, skipping any that would overlap
+    const labels = [], boxes = [];
+    const label = (p, text, cls, force) => labels.push({ p, text, cls: cls || "", force });
+
+    // renomination construction
+    const r = calc && calc.r && !calc.r.error ? calc.r : null;
+    if (r) {
+      out.push(`<path class="trk" d="${path([calc.a1, r.mid, calc.a2])}"/>`);
+      out.push(`<path class="bis" d="${path([r.mid, r.edp])}"/>`);
+    }
+    // route, with the part outside both rings highlighted
+    out.push(`<path class="rte" d="${path(ofp.points)}"/>`);
+    if (r && calc.eep && calc.exp && calc.exp.s > calc.eep.s) {
+      const seg = [calc.eep];
+      route.pts.forEach((p, i) => { if (route.cum[i] > calc.eep.s && route.cum[i] < calc.exp.s) seg.push(p); });
+      seg.push(calc.exp);
+      out.push(`<path class="seg" d="${path(seg)}"/>`);
+    }
+    // waypoints
+    ofp.points.forEach((p, i) => {
+      const [x, y] = S(p), end = i === 0 || i === ofp.points.length - 1;
+      if (end) { out.push(`<circle class="end" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`); label(p, p.name, "", true); }
+      else if (!p.pseudo) { out.push(`<circle class="wp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`); label(p, p.name, "m"); }
+    });
+    // alternates
+    ringApts.forEach((a) => { const [x, y] = S(a); out.push(`<rect class="apt" x="${(x - 5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="10" height="10" rx="2"/>`); label(a, a.id, "k", true); });
+    // EDTO points
+    const dot = (p, cls, text, tcls) => { const [x, y] = S(p); out.push(`<circle class="pt ${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`); label(p, text, tcls, true); };
+    if (r) {
+      const [mx, my] = S(r.mid); out.push(`<path class="pt edp" d="M${mx - 5} ${my}L${mx} ${my - 5}L${mx + 5} ${my}L${mx} ${my + 5}Z"/>`); label(r.mid, "halfway", "g", true);
+      if (calc.eep) dot(calc.eep, "ee", "EEP", "");
+      if (calc.exp) dot(calc.exp, "ee", "EXP", "");
+      const apart = r.etp ? Math.hypot(S(r.etp)[0] - S(r.edp)[0], S(r.etp)[1] - S(r.edp)[1]) : 0;
+      dot(r.edp, "edp", r.etp && apart < 4 ? (Math.abs(r.etpShift) < 1 ? "EDP = ETP" : "EDP / ETP") : "EDP", "g");
+      if (r.etp && apart >= 4) dot(r.etp, "etp", "ETP", "r");
+    }
+    if (same) { const o = (ofp.edto.points || []).find((p) => /^ETP/.test(p.name) && p.lat != null); if (o) { const [x, y] = S(o); out.push(`<circle class="pt ofp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7"/>`); label(o, "OFP " + o.name, "m", true); } }
+
+    // place labels: forced ones first, then waypoint names where there is room
+    labels.sort((a, b) => (b.force ? 1 : 0) - (a.force ? 1 : 0));
+    for (const L of labels) {
+      const [x, y] = S(L.p), w = L.text.length * 6.6 + 4, hgt = 13;
+      if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+      const tries = [[8, 4, "start"], [-8, 4, "end"], [0, -9, "middle"], [0, 17, "middle"], [8, -8, "start"], [8, 15, "start"], [-8, -8, "end"], [-8, 15, "end"]];
+      for (const [dx, dy, anchor] of tries) {
+        const bx = anchor === "start" ? x + dx : anchor === "end" ? x + dx - w : x - w / 2, by = y + dy - hgt + 2;
+        const box = [bx, by, bx + w, by + hgt];
+        if (boxes.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue;
+        boxes.push(box);
+        out.push(`<text class="${L.cls}" x="${(x + dx).toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}">${esc(L.text)}</text>`);
+        break;
+      }
+    }
+    svg.innerHTML = out.join("");
+    $("mapSub").textContent = `60 min ring = ${calc.R} NM`;
+    $("mapLegend").innerHTML = `<span><i style="background:var(--accent)"></i>EDTO alternate, 60 min ring</span>` +
+      (r ? `<span><i style="background:var(--warn)"></i>EEP / EXP</span><span><i style="background:#16a34a"></i>halfway fix, 90° line, EDP</span><span><i style="background:var(--err)"></i>ETP, EDTO segment</span>` : "");
+  }
+  // pan and zoom
+  (function () {
+    const svg = $("map"), ptr = new Map();
+    let last = null;
+    const at = (e) => { const b = svg.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    const zoomAt = (f, x, y) => {
+      if (!view) return;
+      const W = svg.clientWidth, H = svg.clientHeight, z = Math.max(2, Math.min(4000, view.z * f));
+      // keep the map point under (x, y) fixed
+      view.cx += (x - W / 2) * (1 / view.z - 1 / z); view.cy += (y - H / 2) * (1 / view.z - 1 / z); view.z = z; view.fit = false;
+      drawMap();
+    };
+    svg.addEventListener("pointerdown", (e) => { svg.setPointerCapture(e.pointerId); ptr.set(e.pointerId, at(e)); last = null; });
+    svg.addEventListener("pointermove", (e) => {
+      if (!ptr.has(e.pointerId) || !view) return;
+      const prev = ptr.get(e.pointerId), cur = at(e); ptr.set(e.pointerId, cur);
+      if (ptr.size === 1) { view.cx -= (cur[0] - prev[0]) / view.z; view.cy -= (cur[1] - prev[1]) / view.z; view.fit = false; drawMap(); }
+      else if (ptr.size === 2) {
+        const [a, b] = [...ptr.values()], dd = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        if (last) zoomAt(dd / last, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+        last = dd;
+      }
+    });
+    const up = (e) => { ptr.delete(e.pointerId); last = null; };
+    svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
+    svg.addEventListener("wheel", (e) => { e.preventDefault(); const [x, y] = at(e); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, x, y); }, { passive: false });
+    $("zIn").addEventListener("click", () => zoomAt(1.5, svg.clientWidth / 2, svg.clientHeight / 2));
+    $("zOut").addEventListener("click", () => zoomAt(1 / 1.5, svg.clientWidth / 2, svg.clientHeight / 2));
+    $("zFit").addEventListener("click", () => { view = null; drawMap(); });
+    window.addEventListener("resize", () => { if (view && view.fit) view = null; drawMap(); });
+    window.addEventListener("tabshow", (e) => { if (e.detail === "crz") { if (view && view.fit) view = null; drawMap(); } });
+  })();
+
+  function renderAll() { proj = null; compute(); renderSummary(); renderRen(); drawMap(); }
+  renderAll();
 })();
 </script>
 </body>
