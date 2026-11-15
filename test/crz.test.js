@@ -10,7 +10,15 @@ const VCBI = { id: "VCBI", lat: 7.1808, lon: 79.8841 }, VTSP = { id: "VTSP", lat
 const byName = (n) => ofp.points.find((p) => p.name === n);
 
 test("geometry: distance, bearing, destination, ground speed", () => {
-  near(C.dist({ lat: 0, lon: 0 }, { lat: 0, lon: 1 }), 60.04, 0.05);
+  // WGS84: one degree of longitude on the equator is 111,319.49 m; one of latitude there is 110,574.39 m
+  near(C.dist({ lat: 0, lon: 0 }, { lat: 0, lon: 1 }), 111319.49 / 1852, 0.001);
+  near(C.dist({ lat: 0, lon: 0 }, { lat: 1, lon: 0 }), 110574.39 / 1852, 0.001);
+  // Vincenty's published check line (Flinders Peak to Buninyong): 54,972.271 m, azimuth 306 deg 52 min 05.37 s
+  const FP = { lat: -(37 + 57 / 60 + 3.7203 / 3600), lon: 144 + 25 / 60 + 29.5244 / 3600 }, BU = { lat: -(37 + 39 / 60 + 10.1561 / 3600), lon: 143 + 55 / 60 + 35.3839 / 3600 };
+  near(C.dist(FP, BU) * 1852, 54972.271, 0.01);
+  near(C.bearing(FP, BU), 306 + 52 / 60 + 5.37 / 3600, 1e-5);
+  near(C.dist(C.dest(FP, 306 + 52 / 60 + 5.37 / 3600, 54972.271 / 1852), BU) * 1852, 0, 0.01);
+  assert.equal(C.dist(FP, FP), 0);
   near(C.bearing({ lat: 0, lon: 0 }, { lat: 1, lon: 0 }), 0, 1e-9);
   near(C.bearing({ lat: 0, lon: 0 }, { lat: 0, lon: 1 }), 90, 1e-9);
   const p = C.dest({ lat: 5, lon: 90 }, 37, 250);
@@ -77,8 +85,9 @@ test("60 min rings reproduce the OFP entry and exit points", () => {
   const out = C.ringCrossings(route, VCBI, 420).filter((x) => x.exit);
   const inn = C.ringCrossings(route, VTSP, 420).filter((x) => !x.exit);
   assert.equal(out.length, 1); assert.equal(inn.length, 1);
-  near(C.dist(out[0], byName("ENTRY")), 0, 2);
-  near(C.dist(inn[0], byName("EXIT")), 0, 2);
+  near(C.dist(out[0], byName("ENTRY")), 0, 1);
+  near(C.dist(inn[0], byName("EXIT")), 0, 1);
+  near(C.dist(out[0], VCBI), 420, 0.001);
 });
 
 test("renomination: halfway point, 90 degree radial, EDP", () => {

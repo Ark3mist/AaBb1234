@@ -3,12 +3,12 @@
 Offline web app for B737 engine-inop EDTO calculations. Bottom tabs: **CRZ | EDTO | REF**.
 
 One `index.html` (all CSS and app code inline) plus `perf.js` (chart data and calculations) and
-`crz.js` (OFP parser, route geometry, renomination maths). No build step. Hosted from the repo root on GitHub Pages.
+`crz.js` (OFP parser, WGS84 route geometry, renomination maths). No build step. Hosted from the repo root on GitHub Pages.
 
 ## CRZ tab
 - **Import OFP** (PDF or pasted text, read on the device only): departure, destination, cruise level, speed,
   route, every waypoint, wind table, EDTO alternates and the OFP's EDTO points.
-- **Map:** route, waypoints and a 60 minute ring (420 NM, or the OFP's EEP distance) around each EDTO alternate.
+- **Map:** route, waypoints and a 60 minute ring (420 NM, or the OFP's EEP distance) around each EDTO alternate, and faint rings for the other en-route adequate airports (ERA).
 - **Renominate EDTO alternates:** type two airports; the rings, EEP/EXP, EDP and ETP are redrawn, and the FMC
   steps from the MAS "EDTO Basics & Procedures" handout are listed with the numbers to type
   (halfway fix, 90 degree line, EDP, then the into-wind shift to the ETP).

@@ -5,28 +5,82 @@
   "use strict";
 
   // =====================================================================
-  // Geometry on a sphere. Distances in NM, angles in degrees (true).
+  // Geometry on the WGS84 ellipsoid (Vincenty). Distances in NM, angles in degrees (true).
   // =====================================================================
   const R_NM = 3440.065, D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  const WGS_A = 6378137, WGS_F = 1 / 298.257223563, WGS_B = WGS_A * (1 - WGS_F), M_PER_NM = 1852;
   const norm360 = (d) => ((d % 360) + 360) % 360;
 
-  function dist(a, b) {
+  // Spherical versions: only a fallback if the ellipsoid iteration does not settle (near-antipodal points).
+  function sphDist(a, b) {
     const p1 = a.lat * D2R, p2 = b.lat * D2R, dl = (b.lon - a.lon) * D2R;
     const h = Math.sin((p2 - p1) / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
     return 2 * R_NM * Math.asin(Math.min(1, Math.sqrt(h)));
   }
-  /** Initial great-circle bearing a -> b, degrees true. */
-  function bearing(a, b) {
+  function sphBearing(a, b) {
     const p1 = a.lat * D2R, p2 = b.lat * D2R, dl = (b.lon - a.lon) * D2R;
     const y = Math.sin(dl) * Math.cos(p2), x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
     return norm360(Math.atan2(y, x) * R2D);
   }
-  /** Point d NM from a on initial bearing brg. */
+
+  /** Vincenty inverse: { d: NM, brg: initial bearing } or null if it does not converge. */
+  function inverse(a, b) {
+    const L = ((((b.lon - a.lon) % 360) + 540) % 360 - 180) * D2R;
+    if (Math.abs(L) < 1e-13 && Math.abs(a.lat - b.lat) < 1e-11) return { d: 0, brg: 0 };
+    const U1 = Math.atan((1 - WGS_F) * Math.tan(a.lat * D2R)), U2 = Math.atan((1 - WGS_F) * Math.tan(b.lat * D2R));
+    const sU1 = Math.sin(U1), cU1 = Math.cos(U1), sU2 = Math.sin(U2), cU2 = Math.cos(U2);
+    let lam = L, sinS, cosS, sig, cos2a, cos2m, sinL, cosL;
+    for (let i = 0; ; i++) {
+      if (i === 200) return null;
+      sinL = Math.sin(lam); cosL = Math.cos(lam);
+      sinS = Math.hypot(cU2 * sinL, cU1 * sU2 - sU1 * cU2 * cosL);
+      if (sinS === 0) return { d: 0, brg: 0 };
+      cosS = sU1 * sU2 + cU1 * cU2 * cosL;
+      sig = Math.atan2(sinS, cosS);
+      const sinA = (cU1 * cU2 * sinL) / sinS;
+      cos2a = 1 - sinA * sinA;
+      cos2m = cos2a ? cosS - (2 * sU1 * sU2) / cos2a : 0;
+      const C = (WGS_F / 16) * cos2a * (4 + WGS_F * (4 - 3 * cos2a));
+      const next = L + (1 - C) * WGS_F * sinA * (sig + C * sinS * (cos2m + C * cosS * (-1 + 2 * cos2m * cos2m)));
+      const done = Math.abs(next - lam) < 1e-12;
+      lam = next;
+      if (done) break;
+    }
+    const u2 = (cos2a * (WGS_A * WGS_A - WGS_B * WGS_B)) / (WGS_B * WGS_B);
+    const A = 1 + (u2 / 16384) * (4096 + u2 * (-768 + u2 * (320 - 175 * u2)));
+    const B = (u2 / 1024) * (256 + u2 * (-128 + u2 * (74 - 47 * u2)));
+    const dS = B * sinS * (cos2m + (B / 4) * (cosS * (-1 + 2 * cos2m * cos2m) - (B / 6) * cos2m * (-3 + 4 * sinS * sinS) * (-3 + 4 * cos2m * cos2m)));
+    sinL = Math.sin(lam); cosL = Math.cos(lam);
+    return { d: (WGS_B * A * (sig - dS)) / M_PER_NM, brg: norm360(Math.atan2(cU2 * sinL, cU1 * sU2 - sU1 * cU2 * cosL) * R2D) };
+  }
+  /** Geodesic distance, NM. */
+  function dist(a, b) { const r = inverse(a, b); return r ? r.d : sphDist(a, b); }
+  /** Initial geodesic bearing a -> b, degrees true. */
+  function bearing(a, b) { const r = inverse(a, b); return r ? r.brg : sphBearing(a, b); }
+  /** Point d NM from a on initial bearing brg (Vincenty direct). */
   function dest(a, brg, d) {
-    const p1 = a.lat * D2R, l1 = a.lon * D2R, t = brg * D2R, dr = d / R_NM;
-    const p2 = Math.asin(Math.sin(p1) * Math.cos(dr) + Math.cos(p1) * Math.sin(dr) * Math.cos(t));
-    const l2 = l1 + Math.atan2(Math.sin(t) * Math.sin(dr) * Math.cos(p1), Math.cos(dr) - Math.sin(p1) * Math.sin(p2));
-    return { lat: p2 * R2D, lon: ((l2 * R2D + 540) % 360) - 180 };
+    const s = d * M_PER_NM, a1 = brg * D2R, sA1 = Math.sin(a1), cA1 = Math.cos(a1);
+    const tU1 = (1 - WGS_F) * Math.tan(a.lat * D2R), cU1 = 1 / Math.sqrt(1 + tU1 * tU1), sU1 = tU1 * cU1;
+    const sig1 = Math.atan2(tU1, cA1), sinA = cU1 * sA1, cos2a = 1 - sinA * sinA;
+    const u2 = (cos2a * (WGS_A * WGS_A - WGS_B * WGS_B)) / (WGS_B * WGS_B);
+    const A = 1 + (u2 / 16384) * (4096 + u2 * (-768 + u2 * (320 - 175 * u2)));
+    const B = (u2 / 1024) * (256 + u2 * (-128 + u2 * (74 - 47 * u2)));
+    let sig = s / (WGS_B * A), sinS, cosS, cos2m;
+    for (let i = 0; i < 100; i++) {
+      cos2m = Math.cos(2 * sig1 + sig); sinS = Math.sin(sig); cosS = Math.cos(sig);
+      const dS = B * sinS * (cos2m + (B / 4) * (cosS * (-1 + 2 * cos2m * cos2m) - (B / 6) * cos2m * (-3 + 4 * sinS * sinS) * (-3 + 4 * cos2m * cos2m)));
+      const next = s / (WGS_B * A) + dS;
+      const done = Math.abs(next - sig) < 1e-12;
+      sig = next;
+      if (done) break;
+    }
+    cos2m = Math.cos(2 * sig1 + sig); sinS = Math.sin(sig); cosS = Math.cos(sig);
+    const x = sU1 * sinS - cU1 * cosS * cA1;
+    const lat = Math.atan2(sU1 * cosS + cU1 * sinS * cA1, (1 - WGS_F) * Math.hypot(sinA, x));
+    const lam = Math.atan2(sinS * sA1, cU1 * cosS - sU1 * sinS * cA1);
+    const C = (WGS_F / 16) * cos2a * (4 + WGS_F * (4 - 3 * cos2a));
+    const L = lam - (1 - C) * WGS_F * sinA * (sig + C * sinS * (cos2m + C * cosS * (-1 + 2 * cos2m * cos2m)));
+    return { lat: lat * R2D, lon: ((a.lon + L * R2D + 540) % 360) - 180 };
   }
   /** Ground speed along track trk with wind FROM windDir at windKt. null if the wind is too strong to hold the track. */
   function groundSpeed(tas, trk, windDir, windKt) {
@@ -119,8 +173,7 @@
     const half = trackDist / 2;
     const mid = dest(ea1, trackT, half);
 
-    // Every point on the perpendicular through the halfway point is equidistant from both
-    // airports, so the EDP is where the route's distance to EA1 equals its distance to EA2.
+    // The line at 90 degrees through the halfway point is where both airports are equally far, so the EDP is where the route's distance to EA1 equals its distance to EA2.
     const xs = crossings(route, (p) => dist(p, ea1) - dist(p, ea2));
     if (!xs.length) return { error: "The route never passes a point equally distant from " + ea1.id + " and " + ea2.id + ". Check the airport order and the route.", trackT, trackDist, half, mid };
     const edp = xs.map((x) => route.at(x.s)).sort((a, b) => dist(a, mid) - dist(b, mid))[0];

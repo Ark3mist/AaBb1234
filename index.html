@@ -137,6 +137,9 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 #map .wp{fill:var(--panel);stroke:var(--route);stroke-width:1.5}
 #map .ring{fill:var(--accent);fill-opacity:.10;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:6 4}
 #map .apt{fill:var(--accent);stroke:var(--halo);stroke-width:1.5}
+#map .ring.era{fill-opacity:.04;stroke-opacity:.28;stroke-width:1.1;stroke-dasharray:3 5}
+#map .apt.era{fill-opacity:.4;stroke-opacity:.6}
+#map text.e{fill:var(--accent);fill-opacity:.6;font-weight:500}
 #map .end{fill:var(--route);stroke:var(--halo);stroke-width:1.5}
 #map .trk{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
 #map .bis{stroke:#16a34a;stroke-width:1.8;stroke-dasharray:7 5;fill:none}
@@ -565,7 +568,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-05-26";
+  const APP_VERSION = "1-06-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -884,7 +887,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
       if (!calc.noSegment) add("EXP", calc.exp, calc.exp ? `${calc.R} NM from ${esc(calc.ahead.id)}` : "route ends outside the ring");
       rows.sort((x, y) => x.s - y.s);
       $("ptsOut").innerHTML = `<h4>${unchanged() ? "EDTO points" : "New EDTO points"} · ${esc(a1.id)} / ${esc(a2.id)}</h4><div class="tablewrap"><table><thead><tr><th>Point</th><th>Position</th><th>Between</th><th>Distance</th></tr></thead><tbody>${rows.map((x) => x.h).join("")}</tbody></table></div>` +
-        `<div class="s" style="margin-top:6px">${calc.noSegment ? "No EEP or EXP: the route stays inside the 60 min rings." : `EEP and EXP are still-air ${calc.R} NM ring crossings.`}${rr.etp ? " The ETP is the app's estimate with the wind and TAS set in step 3; the FMC ETAs decide the real one." : ""}</div>`;
+        `<div class="s" style="margin-top:6px">${calc.noSegment ? "No EEP or EXP: the route stays inside the 60 min rings." : `EEP and EXP are still-air ${calc.R} NM ring crossings (WGS84).`}${rr.etp ? " The ETP is the app's estimate with the wind and TAS set in step 3; the FMC ETAs decide the real one." : ""}</div>`;
     };
     const estimate = () => {
       const o = $("estOut"), rr = calc.r;
@@ -962,6 +965,9 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     const same = unchanged();
     const ringApts = same ? ofpAlts().map(airport).filter(Boolean) : [calc && calc.a1, calc && calc.a2].filter(Boolean);
     ringApts.forEach((a) => rings.push({ a, pts: circle(a, calc.R) }));
+    // the other en-route adequate airports (ERA) from the OFP, drawn faintly
+    const eraApts = ((ofp.edto && ofp.edto.adequate) || []).map(airport).filter((a) => a && !ringApts.some((x) => x.id === a.id));
+    const eraRings = eraApts.map((a) => ({ a, pts: circle(a, calc.R) }));
 
     // projection: equirectangular about the middle of the route (fine for a regional map)
     if (!proj) {
@@ -972,7 +978,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     if (!view) {
       let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
       const grow = (p) => { const [x, y] = P(p); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; };
-      ofp.points.forEach(grow); rings.forEach((r) => r.pts.forEach(grow));
+      ofp.points.forEach(grow); rings.forEach((r) => r.pts.forEach(grow)); eraRings.forEach((r) => r.pts.forEach(grow));
       view = { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: Math.min(W / ((x1 - x0) * 1.06 || 1), H / ((y1 - y0) * 1.06 || 1)), fit: true };
     }
     const S = (p) => { const [x, y] = P(p); return [W / 2 + (x - view.cx) * view.z, H / 2 + (y - view.cy) * view.z]; };
@@ -1002,6 +1008,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     for (let la = Math.ceil(latS / step) * step; la <= latN; la += step) { const [, y] = S({ lon: proj.lon0, lat: la }); out.push(`<path class="grat" d="M0 ${y.toFixed(1)}H${W}"/><text class="gl" x="3" y="${(y - 3).toFixed(1)}">${Math.abs(la)}${la < 0 ? "S" : "N"}</text>`); }
 
     // 60 min rings
+    eraRings.forEach((r) => out.push(`<path class="ring era" d="${path(r.pts)}Z"/>`));
     rings.forEach((r) => out.push(`<path class="ring" d="${path(r.pts)}Z"/>`));
 
     // labels are placed after all shapes, skipping any that would overlap
@@ -1029,6 +1036,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
       else if (!p.pseudo) { out.push(`<circle class="wp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`); label(p, p.name, "m"); }
     });
     // alternates
+    eraApts.forEach((a) => { const [x, y] = S(a); out.push(`<rect class="apt era" x="${(x - 4).toFixed(1)}" y="${(y - 4).toFixed(1)}" width="8" height="8" rx="2"/>`); if (a.id !== ofp.depIcao && a.id !== ofp.destIcao) label(a, a.id, "e"); });
     ringApts.forEach((a) => { const [x, y] = S(a); out.push(`<rect class="apt" x="${(x - 5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="10" height="10" rx="2"/>`); label(a, a.id, "k", true); });
     // EDTO points
     const dot = (p, cls, text, tcls) => { const [x, y] = S(p); out.push(`<circle class="pt ${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`); label(p, text, tcls, true); };
@@ -1060,6 +1068,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     svg.innerHTML = out.join("");
     $("mapSub").textContent = `60 min ring = ${calc.R} NM`;
     $("mapLegend").innerHTML = `<span><i style="background:var(--accent)"></i>EDTO alternate, 60 min ring</span>` +
+      (eraApts.length ? `<span><i style="background:var(--accent);opacity:.35"></i>Other ERA (${eraApts.map((a) => esc(a.id)).join(" ")})</span>` : "") +
       (r ? `<span><i style="background:var(--warn)"></i>EEP / EXP</span><span><i style="background:#16a34a"></i>halfway fix, 90° line, EDP</span><span><i style="background:var(--err)"></i>ETP, EDTO segment</span>` : "");
   }
   // pan and zoom
