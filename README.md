@@ -25,7 +25,13 @@ aviationweather.gov sends no CORS header, so a web page cannot read it directly 
 relay instead. The feed address defaults to `raw.githubusercontent.com/Ark3mist/EDTO-CRZ-APP/sigmet-data/sigmet.json`
 and can be changed under Settings > SIGMET feed. It accepts either the raw `isigmet?format=json` array or
 `{ "generatedAt": <ms>, "records": [...] }`. The age shown is the age of the relay's copy, not of the last tap.
-**Until a relay is publishing to that address, the layer shows "not published yet".**
+
+The relay is `.github/workflows/sigmet.yml`: every 10 minutes it fetches the feed and replaces a single-commit
+branch, `sigmet-data`, with one file, `sigmet.json` (the force push keeps the history from growing). If the fetch
+fails nothing is published, so the app shows the last copy with its true age. GitHub only runs scheduled workflows
+from the default branch, so it starts after this is merged: open **Actions > Publish SIGMET feed > Run workflow** once
+to publish the first copy. Scheduled runs are often late (10 to 30 minutes) and GitHub pauses them after 60 days
+without repository activity. **Until the relay has run, the layer shows "not published yet".**
 
 ## REF tab
 Short reference: EDTO terms, diversion strategies, the renomination steps and both critical fuel checks,
