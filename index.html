@@ -568,7 +568,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-06-26";
+  const APP_VERSION = "1-07-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -773,16 +773,20 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     if (ren.ea2 == null) ren.ea2 = a[1] || "";
   }
   const unchanged = () => { const a = ofpAlts(); return a.length >= 2 && ren.ea1 === a[0] && ren.ea2 === a[1]; };
-  /** Wind rows from the OFP at the plan point nearest to p. */
-  function windsNear(p) {
-    let best = null;
+  /** Every plan point that has a wind column in the OFP, nearest to p first. */
+  function windPoints(p) {
+    const out = [];
     for (const w of ofp.points) {
       const rows = ofp.winds && ofp.winds[w.name];
-      if (!rows || !rows.length) continue;
-      const d = CRZ.dist(p, w);
-      if (!best || d < best.d) best = { d, name: w.name, rows, tas: w.tas };
+      if (rows && rows.length) out.push({ d: CRZ.dist(p, w), name: w.name, rows, tas: w.tas });
     }
-    return best;
+    return out.sort((x, y) => x.d - y.d);
+  }
+  /** TAS to use with one wind row: the planned Mach at that level's forecast temperature; the OFP's diversion speed low down. */
+  function tasFor(w, pt) {
+    if (w.fl <= 150 && ofp.edto && ofp.edto.divTas) return ofp.edto.divTas;
+    if (ofp.mach && Number.isFinite(w.oat)) return Math.round(ofp.mach * 38.967854 * Math.sqrt(273.15 + w.oat));
+    return (pt && pt.tas) || ofp.cruiseTas || 480;
   }
   function compute() {
     calc = null; route = null;
@@ -797,8 +801,9 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     calc.r = r;
     if (r.error) return;
     // wind and TAS: from the OFP at the point nearest the EDP, unless typed in
-    const near = windsNear(r.edp);
-    calc.near = near;
+    const wpts = windPoints(r.edp);
+    const near = wpts.find((w) => w.name === ren.windPt) || wpts[0] || null;
+    calc.windPts = wpts; calc.near = near; calc.nearest = wpts[0] || null;
     if (near) {
       const cruiseRow = near.rows.find((w) => w.cruise) || near.rows.reduce((x, y) => (Math.abs(y.fl - (ofp.cruiseFL || 350)) < Math.abs(x.fl - (ofp.cruiseFL || 350)) ? y : x));
       calc.cruiseLevel = cruiseRow.fl;
@@ -806,7 +811,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
       if (!ren.manual) {
         const w = near.rows.find((x) => x.fl === ren.level);
         ren.windDir = w.dir; ren.windKt = w.kt;
-        ren.tas = w.fl <= 150 && ofp.edto && ofp.edto.divTas ? ofp.edto.divTas : (near.tas || ofp.cruiseTas || 480);
+        ren.tas = tasFor(w, near);
       }
     } else if (!ren.manual && ren.tas == null) { ren.windDir = 0; ren.windKt = 0; ren.tas = ofp.cruiseTas || 480; }
     r = CRZ.renominate(route, a1, a2, Object.assign({ tas: num(ren.tas), windDir: num(ren.windDir), windKt: num(ren.windKt) }, opt));
@@ -828,7 +833,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     $("ea1").value = ren.ea1 || ""; $("ea2").value = ren.ea2 || "";
     const nameOf = (id, code, a) => { const el = $(id); el.className = "aptname" + (code && !a ? " bad" : ""); el.innerHTML = a ? aptLabel(a) : code ? (code.length < 3 ? "" : "Not in the airport list") : ""; };
     nameOf("ea1Name", ren.ea1, calc && calc.a1); nameOf("ea2Name", ren.ea2, calc && calc.a2);
-    $("renReset").hidden = unchanged() && !ren.manual && !ren.eta1 && !ren.eta2;
+    $("renReset").hidden = unchanged() && !ren.manual && !ren.eta1 && !ren.eta2 && !ren.windPt && (!calc || ren.level === calc.cruiseLevel);
     const el = $("renOut");
     if (!calc || !calc.a1 || !calc.a2) { el.innerHTML = `<div class="hint">Enter two airports (ICAO or IATA code) to see the 60 minute rings and how to find the new ETP.</div>`; return; }
     const r = calc.r, a1 = calc.a1, a2 = calc.a2;
@@ -841,7 +846,9 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     const legTxt = (l) => (l.before && l.after ? `${K(l.before.name)} and ${K(l.after.name)}` : "the two waypoints either side");
     const max = maxDivNm(), rule = (ofp.edto && ofp.edto.ruleMin) || 120;
     const lvlOpts = calc.near ? calc.near.rows.slice().sort((x, y) => y.fl - x.fl).map((w) =>
-      `<option value="${w.fl}"${w.fl === ren.level ? " selected" : ""}>FL${pad(w.fl, 3)} · ${pad(w.dir, 3)}/${pad(w.kt, 3)}${w.fl === calc.cruiseLevel ? " · cruise" : ""}</option>`).join("") : "";
+      `<option value="${w.fl}"${w.fl === ren.level ? " selected" : ""}>FL${pad(w.fl, 3)} · ${pad(w.dir, 3)}/${pad(w.kt, 3)} · TAS ${tasFor(w, calc.near)}${w.fl === calc.cruiseLevel ? " · plan" : ""}</option>`).join("") : "";
+    const ptOpts = (calc.windPts || []).slice().sort((x, y) => ofp.points.findIndex((p) => p.name === x.name) - ofp.points.findIndex((p) => p.name === y.name)).map((w) =>
+      `<option value="${esc(w.name)}"${calc.near && w.name === calc.near.name ? " selected" : ""}>${esc(w.name)}${calc.nearest && w.name === calc.nearest.name ? " · nearest" : ""} · ${Math.round(w.d)} NM</option>`).join("");
 
     let h = "";
     // headline
@@ -866,12 +873,13 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
       <div class="r2"><div><label for="eta1">FMC ETA ${esc(a1.id)}</label><input id="eta1" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta1 || "")}"></div><div><label for="eta2">FMC ETA ${esc(a2.id)}</label><input id="eta2" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta2 || "")}"></div></div>
       <div id="etaOut"></div></div></li>`;
     h += `<li><div>Until you have the FMC ETAs, this is the app's estimate, using one wind for both diversions:
-      <label for="rLvl">OFP wind near the EDP</label><select id="rLvl"${lvlOpts ? "" : " disabled"}>${lvlOpts || "<option>no wind table</option>"}</select>
+      <div class="r2"><div><label for="rPt">OFP wind at</label><select id="rPt"${ptOpts ? "" : " disabled"}>${ptOpts || "<option>no wind table</option>"}</select></div>
+      <div><label for="rLvl">Your level</label><select id="rLvl"${lvlOpts ? "" : " disabled"}>${lvlOpts || "<option>no wind table</option>"}</select></div></div>
       <div class="r2"><div><label for="rWd">Wind °T / kt</label><div class="inbtn"><input id="rWd" class="mono" inputmode="numeric" maxlength="3" value="${Number.isFinite(num(ren.windDir)) ? pad(num(ren.windDir), 3) : ""}" aria-label="Wind direction"><input id="rWs" class="mono" inputmode="numeric" maxlength="3" value="${ren.windKt ?? ""}" aria-label="Wind speed" style="width:64px"></div></div><div><label for="rTas">TAS kt</label><input id="rTas" class="mono" inputmode="numeric" maxlength="3" value="${ren.tas ?? ""}"></div></div>
-      ${calc.near ? `<div class="s" style="margin-top:4px">Wind from the OFP at ${esc(calc.near.name)}.</div>` : ""}
+      ${calc.near ? `<div class="s" style="margin-top:4px">Every level the OFP forecasts at ${esc(calc.near.name)} is listed. Pick the one nearest the level you are actually flying; the wind, the TAS (M${ofp.mach ? ofp.mach.toFixed(2).slice(1) : ".79"} at that level's forecast temperature) and the ETP follow. For a level in between, type the wind and TAS yourself.</div>` : ""}
       <div id="estOut"></div></div></li>`;
     h += `</ol>`;
-    h += `<div class="note"><b>Check which wind you use.</b> The FMC ETAs are at cruise level and cruise speed. The OFP's own ETP is for the critical case: one engine out and depressurised, about ${ofp.edto && ofp.edto.divTas ? ofp.edto.divTas + " kt TAS" : "310 KIAS"} near FL100, where the wind can be the opposite of the cruise wind. Pick the FL100 wind above to see that case.</div>`;
+    h += `<div class="note"><b>Check which wind you use.</b> The FMC ETAs are at the level and speed you are flying. The OFP's own ETP is for the critical case: one engine out and depressurised, about ${ofp.edto && ofp.edto.divTas ? ofp.edto.divTas + " kt TAS" : "310 KIAS"} near FL100, where the wind can be the opposite of the cruise wind. Pick the FL100 wind above to see that case.</div>`;
     h += `<div class="btnrow"><button type="button" id="toCf">Check critical fuel for the ETP</button></div><div class="hint" id="toCfHint"></div>`;
     el.innerHTML = h;
 
@@ -904,14 +912,15 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
       $("toCfHint").textContent = `Opens EDTO › Critical fuel with the longer distance from the ETP (${nm(Math.max(rr.etpDist1, rr.etpDist2))}). Set the weight, wind and ISA there.`;
     };
     const etaCalc = () => {
-      // FMC ETAs are at cruise, so the formula uses the cruise TAS, whatever the estimate below uses
-      const t = (calc.near && calc.near.tas) || ofp.cruiseTas || 480;
+      // FMC ETAs are at the level being flown: use that level's TAS, or the planned cruise TAS when a low diversion level is selected below
+      const lvlRow = calc.near && calc.near.rows.find((w) => w.fl === ren.level);
+      const t = lvlRow && lvlRow.fl > 150 ? (ren.manual && num(ren.tas) > 0 ? num(ren.tas) : tasFor(lvlRow, calc.near)) : ((calc.near && calc.near.tas) || ofp.cruiseTas || 480);
       const s = CRZ.shiftFromEtas(ren.eta1, ren.eta2, t), o = $("etaOut");
       if (!s) { o.innerHTML = ""; return; }
       const longer = s.longer === 1 ? a1 : a2;
       const back = (longer === calc.behind);
       o.innerHTML = `<div class="resbox">` + (s.longer === 0 ? `Same ETA: the EDP is the ETP.` :
-        `Difference ${V(Math.abs(s.dtMin) + " min")} ÷ 2 × ${(t / 60).toFixed(1)} NM/min <span class="s">(cruise TAS ${t} kt)</span> = ${V(Math.round(s.shift) + " NM")}<br>${esc(longer.id)} takes longer, so move ${back ? "back" : "ahead"} along the route: type ${K(f2 + "/" + (back ? "-" : "") + Math.round(s.shift))} to make ${K(f3)}, then delete ${esc(f2)}.`) + `</div>`;
+        `Difference ${V(Math.abs(s.dtMin) + " min")} ÷ 2 × ${(t / 60).toFixed(1)} NM/min <span class="s">(TAS ${t} kt)</span> = ${V(Math.round(s.shift) + " NM")}<br>${esc(longer.id)} takes longer, so move ${back ? "back" : "ahead"} along the route: type ${K(f2 + "/" + (back ? "-" : "") + Math.round(s.shift))} to make ${K(f3)}, then delete ${esc(f2)}.`) + `</div>`;
     };
     estimate(); etaCalc();
     const live = () => { store.set("crz.ren", ren); compute(); estimate(); etaCalc(); drawMap(); $("renReset").hidden = false; };
@@ -920,6 +929,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
     $("rWd").addEventListener("input", (e) => { ren.windDir = e.target.value; ren.manual = true; live(); });
     $("rWs").addEventListener("input", (e) => { ren.windKt = e.target.value; ren.manual = true; live(); });
     $("rTas").addEventListener("input", (e) => { ren.tas = e.target.value; ren.manual = true; live(); });
+    $("rPt").addEventListener("change", (e) => { ren.windPt = e.target.value; ren.manual = false; store.set("crz.ren", ren); compute(); renderRen(); drawMap(); });
     $("rLvl").addEventListener("change", (e) => { ren.level = +e.target.value; ren.manual = false; store.set("crz.ren", ren); compute(); renderRen(); drawMap(); });
     $("toCf").addEventListener("click", () => {
       const rr = calc.r; if (!rr.etp) return;
@@ -929,7 +939,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
   }
   const onEa = (k) => (e) => {
     const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); e.target.value = v;
-    ren[k] = v; ren.manual = false; ren.eta1 = ren.eta2 = "";
+    ren[k] = v; ren.manual = false; ren.windPt = null; ren.eta1 = ren.eta2 = "";
     store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap();
   };
   $("ea1").addEventListener("input", onEa("ea1"));
