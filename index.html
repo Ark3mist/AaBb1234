@@ -51,7 +51,7 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .updbadge{font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:2px 9px;cursor:pointer;border:0}
 .iconbtn{width:36px;height:36px;padding:0;display:grid;place-items:center;border-radius:999px;color:var(--muted)}
 .iconbtn svg{width:20px;height:20px}
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
 .tabbar button{border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;font-size:11px;font-weight:600;letter-spacing:.06em;border-radius:10px}
 .tabbar svg{width:24px;height:24px}
 .tabbar button[aria-current=page]{color:var(--accent);background:var(--soft)}
@@ -198,6 +198,20 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 [data-view=oma] td,[data-view=oma] th{white-space:normal;vertical-align:top}
 [data-view=oma] td.mono{white-space:nowrap}
 @media (max-width:360px){.tabbar button{font-size:10px;letter-spacing:.02em}}
+.qt td,.qt th{white-space:normal;vertical-align:top}
+.qt td.mono{white-space:nowrap}
+.qh{margin:14px 0 6px;font-size:13px;font-weight:700;color:var(--h-ink)}
+table.cht{font-size:12px}
+table.cht th,table.cht td{text-align:right;white-space:nowrap;padding:6px 4px}
+table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{text-align:left;padding-left:2px}
+table.cht thead tr:first-child th:first-child{white-space:normal}
+table.cht th{font-size:10.5px}
+table.cht tr.grp th{text-align:center;border-bottom:1px solid var(--line)}
+table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 0 var(--line)}
+.swipe{font-size:12px;color:var(--muted);margin:0 0 6px}
+@media (min-width:600px){.swipe{display:none}}
+.qd{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.qd summary{font-size:13px;font-weight:700;color:var(--h-ink);padding:4px 0}
 </style>
 </head>
 <body>
@@ -217,7 +231,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
       <dd><div class="seg" id="themeSeg" role="radiogroup" aria-label="Appearance"><button type="button" data-theme="device" role="radio">Device</button><button type="button" data-theme="light" role="radio">Light</button><button type="button" data-theme="dark" role="radio">Dark</button></div></dd>
       <dt>Version</dt><dd id="verTxt" class="mono"></dd>
       <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span id="updMsg" class="s"></span></dd>
-      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · OM-A Table 8.5.6.6(1), Rev 10.3.0</dd>
+      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 and OI.4.7 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · OM-A Table 8.5.6.6(1), Rev 10.3.0</dd>
       <dt>Credits</dt><dd class="s">PDF.js (Apache 2.0) · airportsdata (MIT) · Natural Earth land outlines · World Magnetic Model 2025</dd>
     </dl>
   </dialog>
@@ -460,7 +474,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
         <li><div>If it is less, make sure arrival fuel is above minimum diversion fuel (MDF).</div></li>
       </ol>
       <div class="note"><b>OM-A 8.5.9.8:</b> there is no EDTO rule that you must reach the critical point with fuel at or above the critical fuel, and no diversion is required for that alone. Normal fuel policy applies. See the OMA tab.</div>
-      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Weight at ETP</button><button type="button" data-goto="edto" data-open="cf">Critical fuel chart</button></div>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Weight at ETP</button><button type="button" data-goto="edto" data-open="cf">Critical fuel chart</button><button type="button" data-goto="qrh">QRH pages</button></div>
     </section>
 
     <div class="hint" style="text-align:center">Summary of “EDTO Basics &amp; Procedures, B737-800” (FMC works, 2018) and the MAS EDTO handout (2025). A memory aid only: the current OM-A, OM-B and FCOM govern.</div>
@@ -594,6 +608,149 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     <div class="hint" style="text-align:center">Summary of MAB OM-A Revision 10.3.0 (10 Mar 2026): 8.1.7.7, 8.5 and 8.10.14.2. Paragraph numbers are shown so you can check the source. A memory aid only: the controlled OM-A governs.</div>
   </div>
 
+  <div class="view" data-view="qrh" hidden>
+    <section>
+      <h2>QRH · EDTO pages</h2>
+      <p class="refp">The EDTO pages of the Boeing 737 FCOM QRH (Operational Information, chapter OI, section 4; MAS issue D6-27370-8H6-MAS), in the order you use them. Page numbers are shown against each item.</p>
+      <div class="tablewrap"><table class="qt">
+        <thead><tr><th>Page</th><th>Content</th><th>Dated</th></tr></thead>
+        <tbody>
+          <tr><td class="mono"><b>OI.4.1</b></td><td>Before departure, after airborne, before the EEP</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.2</b></td><td>APU choice, fuel situation, EDTO fuel alternate</td><td class="mono">5 Apr 2025</td></tr>
+          <tr><td class="mono"><b>OI.4.3</b></td><td>Alternate check before the EEP (flow chart)</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.4</b></td><td>Re-nominating an alternate; EDTO briefing</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.5</b></td><td>Briefing (cont.); monitoring; after the EXP</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.6</b></td><td>Engine inop altitude capability, B737-800</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.7</b></td><td>Engine inop critical fuel reserves, B737-800</td><td class="mono">1 Oct 2024</td></tr>
+        </tbody>
+      </table></div>
+      <div class="hint">OI.4.8 is blank. The QRH copy supplied lists revisions up to Rev 20 (30 Jun 2026); none touches OI.4 after 5 Apr 2025.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">1</span> Before departure and after airborne</h2>
+      <ul class="acts">
+        <li><b>Test the crossfeed valve.</b> Selector OPEN: the VALVE OPEN light goes bright, then dim. Selector CLOSE: bright, then out. Enter any failure in the Technical Log. <span class="omref">OI.4.1</span></li>
+        <li><b>Insert</b> the EDTO alternates into FMC FIX INFO, then <b>verify</b> them. <span class="omref">OI.4.1</span></li>
+        <li><b>Send the EDTO message</b> once airborne, to FDC by ACARS or SATCOM (or the EDTO prompt if fitted). It carries: <span class="key wide">ATD · TOW · TOF · EEP · ETP · EXP · ETA</span> <span class="omref">OI.4.1</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="phase">2</span> Before the EEP</h2>
+      <ul class="acts">
+        <li><b>Review</b> aircraft position. ANP must be better than RNP. <span class="omref">OI.4.1</span></li>
+        <li><b>Check</b> aircraft status: master caution recall, and review the EDTO restrictions. EDTO critical equipment is listed in the SOM. <span class="omref">OI.4.1</span></li>
+        <li><b>APU (choose one).</b> <span class="omref">OI.4.2</span>
+          <ul class="acts">
+            <li><b>APU on demand:</b> keep the APU <b>OFF</b>. B737-800 9M-MXA to 9M-MXY, and all B737-8.</li>
+            <li><b>Non-APU on demand:</b> <b>START</b> the APU and verify the APU GEN OFF bus light is on. B737-800 9M-FFF and 9M-MLK to 9M-MLV.</li>
+          </ul></li>
+        <li><b>Check the fuel situation.</b> Forecast fuel over the ETP should be above the critical fuel required. If it is below, compare arrival fuel with MDF and make sure it is above MDF to continue into EDTO. <span class="omref">OI.4.2</span></li>
+        <li><b>Check the EDTO fuel alternate</b> with the flow chart below. <span class="omref">OI.4.2</span></li>
+      </ul>
+      <div class="note"><b>Compare with OM-A 8.5.9.8.</b> OM-A says there is no EDTO rule to reach the critical point with fuel at or above the critical fuel, and that no diversion is required for that alone. The QRH asks you to check arrival fuel against MDF when it is below. Both are on the OMA tab.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">3</span> Alternate check (flow chart)</h2>
+      <ol class="steps">
+        <li><div><b>Check</b> updated weather and NOTAMs for the nominated EDTO alternates, and that the airport charts are accessible. <span class="omref">OI.4.3</span></div></li>
+        <li><div>If the alternates <b>satisfy the criteria</b>: brief, and continue into EDTO.</div></li>
+        <li><div>If not: <b>request</b> a new alternate from FDC, or <b>re-nominate</b> manually, and <b>check fuel</b>.</div></li>
+        <li><div>If the new alternates satisfy the criteria: brief, and continue into EDTO.</div></li>
+        <li><div>If not: <b>reroute</b> to non-EDTO or divert, and <b>advise FDC</b>.</div></li>
+      </ol>
+      <div class="hint">Reconstructed from the text of the flow chart. Compare it with the figure on OI.4.3.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">4</span> Re-nominating an alternate</h2>
+      <p class="refp">When a re-nomination is needed, send a downlink to FDC by ACARS, or call FDC by SATCOM. Ask for: <span class="omref">OI.4.4</span></p>
+      <ul class="acts">
+        <li>The <b>new EA</b></li>
+        <li>The <b>EEP, ETP and EXP coordinates</b> and the <b>EDTO critical fuel</b></li>
+        <li>A <b>weather and NOTAM update</b></li>
+      </ul>
+      <p class="refp" style="margin-top:10px">The new waypoints FDC uplinks may be inserted in the FMC. Brief the changes.</p>
+      <div class="btnrow"><button type="button" data-goto="crz">Work it out on the CRZ tab</button></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">5</span> EDTO briefing</h2>
+      <ol class="steps">
+        <li><div><b>Decide the diversion airport.</b> Enter the alternates in FMC FIX INFO and/or the ALTN page. FMC route 2 is recommended. <span class="omref">OI.4.4</span></div></li>
+        <li><div><b>Decide the diversion routing.</b> Look at both the direct track (ALTN page) and routes via airways. Route 2 is recommended.</div></li>
+        <li><div><b>Check MORA / MEA</b> on the chosen routing.</div></li>
+        <li><div><b>FMC EO CRZ page:</b> check the maximum altitude for obstacle (driftdown ceiling).</div></li>
+        <li><div><b>QRH Ops Info:</b> check the maximum altitude for standard (LRC ceiling, 280 kt / M.79). <b>PI section:</b> check the maximum altitude and speed for standard (LRC ceiling).</div></li>
+        <li><div><b>QRH Ops Info:</b> check the maximum altitude for fixed speed (310 kt / M.79 ceiling).</div></li>
+        <li><div><b>Decide the strategy:</b> obstacle, standard or fixed speed. <b>Fuel critical:</b> standard. <b>Time critical:</b> fixed speed.</div></li>
+        <li><div><b>Brief the scenarios</b> that need a diversion to the EDTO alternate, for example engine failure or fire, rapid decompression, smoke or fumes or fire without thrust loss. <span class="omref">OI.4.5</span></div></li>
+      </ol>
+      <p class="refp" style="margin-top:10px">The QRH separates two cases: <span class="omref">OI.4.5</span></p>
+      <dl class="terms">
+        <dt>Descent required, or unable to maintain altitude</dt><dd>For example thrust loss or engine failure, rapid depressurisation.</dd>
+        <dt>Descent not required, or able to maintain altitude</dt><dd>For example no thrust loss, medical, cargo fire.</dd>
+      </dl>
+      <div class="btnrow"><button type="button" data-goto="ref">FMC steps (REF)</button><button type="button" data-goto="oma">Diversion strategies (OMA)</button></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">6</span> In the EDTO segment and after the EXP</h2>
+      <ul class="acts">
+        <li><b>Monitor</b> the status of the en-route diversion airports. <span class="omref">OI.4.5</span></li>
+        <li><b>Approaching each ETP,</b> review the EDTO briefing again for the next diversion airport.</li>
+        <li><b>After the EXP:</b> if the APU is on, switch it <b>off</b> for the last hour of cruise.</li>
+        <li><b>After the EXP:</b> test the crossfeed valve again (OPEN: light bright then dim; CLOSE: bright then out) and report any failure in the Technical Log.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Altitude capability · OI.4.6</h2>
+      <p class="refp">Engine inoperative, B737-800, maximum continuous thrust, 100 ft/min residual rate of climb. Pressure altitude, ft. <span class="omref">OI.4.6</span></p>
+      <h3 class="qh">Long Range Cruise (standard strategy)</h3>
+      <div class="tablewrap" id="qrhLrc"></div>
+      <div class="hint">Engine anti-ice on: reduce by <b>1,200 ft</b>. Engine and wing anti-ice on: reduce by <b>5,500 ft</b>.</div>
+      <h3 class="qh">310 KIAS (fixed speed strategy)</h3>
+      <div class="tablewrap" id="qrhFix"></div>
+      <div class="hint">Engine anti-ice on: reduce by <b>1,200 ft</b>. Engine and wing anti-ice on: reduce by <b>4,900 ft</b>.</div>
+      <div class="note"><b>Reading between values.</b> The page gives three ISA columns and no interpolation rule. The EDTO tab interpolates both weight and ISA. Reading the next-higher ISA column instead gives lower figures. Use <b>ISA+10 and below</b> for anything colder than +10, and there is no value above ISA+20.</div>
+      <details class="qd"><summary>In-flight (PI) section: CFM56-7B24 aircraft</summary>
+        <p class="refp" style="margin-top:8px">The in-flight QRH has Engine Inop LRC altitude chapters for the 737-800W with CFM56-7B24 and CFM56-7B26 engines, and for the 737-800WSFP1 with CFM56-7B26. Pressure altitude, ft; dated 30 Sep 2025.</p>
+        <div class="tablewrap" id="qrhB24"></div>
+        <div class="hint">Engine anti-ice on: reduce by <b>2,000 ft</b>. Engine and wing anti-ice on: reduce by <b>6,500 ft</b>.</div>
+        <div class="note bad"><b>Much lower than the table above.</b> The B26 and SFP1 chapters give the same numbers as OI.4.6. This B24 table is up to 5,700 ft lower at 85 t and 2,700 ft lower at 68.4 t, ISA+12. The QRH text supplied does not say which registrations use which table. <b>The EDTO tab calculates with the B26 / OI.4.6 numbers only.</b></div>
+      </details>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Altitude calculator</button></div>
+    </section>
+
+    <section>
+      <h2>Critical fuel reserves · OI.4.7</h2>
+      <p class="refp">310 KIAS cruise critical fuel reserves, engine inoperative, B737-800. <span class="omref">OI.4.7</span></p>
+      <div class="swipe">Swipe sideways for the weight columns.</div>
+      <div class="tablewrap" id="qrhCf"></div>
+      <div class="hint">Weights are the weight at the critical point. Fuel in 1,000 kg. Add the wind correction to the nil-wind fuel (tailwind −, headwind +). A dash means the chart gives no value.</div>
+      <h3 class="qh">Based on</h3>
+      <ul class="pts">
+        <li>Emergency descent to 10,000 ft, level cruise at 10,000 ft</li>
+        <li>250 KIAS descent to 1,500 ft, 15 minute hold at 1,500 ft</li>
+        <li>One missed approach, then approach and land</li>
+        <li>5% allowance for wind errors. Includes APU fuel burn.</li>
+      </ul>
+      <h3 class="qh">Corrections</h3>
+      <ul class="pts">
+        <li>Increase fuel required by <b>0.5%</b> for each 10 °C above ISA.</li>
+        <li>If icing is expected, increase fuel required by <b>17%</b>: engine and wing anti-ice (5%) and ice on unheated surfaces (12%).</li>
+        <li>Allowance for performance deterioration is <b>not</b> included.</li>
+      </ul>
+      <div class="note"><b>Compare, then use the higher.</b> Compare this chart with the critical fuel reserves for all engines operative and use the higher of the two. The all-engines chart is not in the app.</div>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="cf">Critical fuel calculator</button></div>
+    </section>
+
+    <div class="hint" style="text-align:center">Summary of pages OI.4.1 to OI.4.7 of the MAS 737 QRH (D6-27370-8H6-MAS) and the in-flight Engine Inop LRC table. The source is Boeing proprietary. A memory aid only: the QRH governs.</div>
+  </div>
+
   <div class="brand">EDTO CRZ · reference tool, check against your approved data</div>
 </main>
 
@@ -602,6 +759,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
   <button type="button" data-tab="edto"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>EDTO</span></button>
   <button type="button" data-tab="ref"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4M8 7h7M8 11h5"/></svg><span>REF</span></button>
   <button type="button" data-tab="oma"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg><span>OMA</span></button>
+  <button type="button" data-tab="qrh"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1z"/><path d="M9 13l2 2 4-4"/></svg><span>QRH</span></button>
 </nav>
 
 <script src="perf.js"></script>
@@ -709,7 +867,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
   syncFields(); calc();
 
   // ---------- tabs (bottom bar) ----------
-  const TABS = { crz: "CRZ", edto: "EDTO", ref: "REF", oma: "OMA" };
+  const TABS = { crz: "CRZ", edto: "EDTO", ref: "REF", oma: "OMA", qrh: "QRH" };
   const tabScroll = {};
   let curTab = null;
   function showTab(name){
@@ -745,7 +903,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-10-26";
+  const APP_VERSION = "1-11-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -1349,6 +1507,26 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 
   function renderAll() { proj = null; compute(); renderSummary(); renderRen(); if (ofp) renderWindCtl(); drawMap(); }
   renderAll();
+})();
+</script>
+<script>
+// QRH tab: chart tables, drawn from the same data the calculators use so the two cannot disagree.
+(function(){
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const n0 = (v) => v.toLocaleString("en-US");
+  const sg = (v) => (v == null ? "–" : (v < 0 ? "−" : "+") + Math.abs(v).toFixed(1));
+  const alt = (tbl) => {
+    const ws = tbl.weights.slice().reverse();
+    return `<table class="cht"><thead><tr><th>Weight (1000 kg)</th><th>ISA+10 &amp; below</th><th>ISA+15</th><th>ISA+20</th></tr></thead><tbody>` +
+      ws.map((w) => { const i = tbl.weights.indexOf(w); return `<tr><td class="mono"><b>${w}</b></td>${[0, 1, 2].map((c) => `<td class="mono">${n0(tbl.alt[c][i])}</td>`).join("")}</tr>`; }).join("") + `</tbody></table>`;
+  };
+  const d = PERF.B738.altitudeCapability, cf = PERF.B738.criticalFuel;
+  $("qrhLrc").innerHTML = alt({ weights: d.weights, alt: d.lrc.alt });
+  $("qrhFix").innerHTML = alt({ weights: d.weights, alt: d.kias310.alt });
+  $("qrhB24").innerHTML = alt(PERF.B738_PI_B24);
+  $("qrhCf").innerHTML = `<table class="cht"><thead><tr class="grp"><th rowspan="2">Dist NM</th><th colspan="3">Wind, 1000 kg</th><th colspan="${cf.weights.length}">Nil-wind fuel by weight, 1000 kg</th></tr><tr><th>50 TWC</th><th>50 HWC</th><th>100 HWC</th>${cf.weights.map((w) => `<th>${w}</th>`).join("")}</tr></thead><tbody>` +
+    cf.distances.map((dist, i) => `<tr><td class="mono"><b>${n0(dist)}</b></td>${cf.windCorr[i].map((v) => `<td class="mono">${sg(v)}</td>`).join("")}${cf.fuel[i].map((v) => `<td class="mono">${v == null ? "–" : v.toFixed(1)}</td>`).join("")}</tr>`).join("") + `</tbody></table>`;
 })();
 </script>
 </body>

@@ -92,3 +92,23 @@ test("altitude capability interpolates on both axes at once: weight, then ISA (b
   assert.equal(altitudeCapability(d, "lrc", 85.1, 12), null);
   near(altitudeCapability(d, "lrc", 68.403, -5), altitudeCapability(d, "lrc", 68.403, 10), 1e-9);
 });
+
+test("reference data: the CFM56-7B24 in-flight LRC table (QRH tab only, not used by the calculators)", () => {
+  const { B738, B738_PI_B24: b24 } = require("../perf.js");
+  assert.deepEqual(b24.weights, B738.altitudeCapability.weights);
+  assert.equal(b24.alt.length, 3); b24.alt.forEach((c) => assert.equal(c.length, 10));
+  // spot values straight from the QRH (85 t row, 65 t row, 40 t row) and the anti-ice reductions
+  assert.deepEqual([b24.alt[0][9], b24.alt[1][9], b24.alt[2][9]], [9500, 6400, 3400]);
+  assert.deepEqual([b24.alt[0][5], b24.alt[1][5], b24.alt[2][5]], [21100, 18600, 16300]);
+  assert.deepEqual([b24.alt[0][0], b24.alt[1][0], b24.alt[2][0]], [33800, 33000, 31800]);
+  assert.deepEqual(b24.antiIce, { engine: 2000, engineWing: 6500 });
+  // never above the B26 table; identical at 50 t and below; altitude falls with weight and with ISA
+  const b26 = B738.altitudeCapability.lrc.alt;
+  for (let c = 0; c < 3; c++) for (let i = 0; i < 10; i++) {
+    assert.ok(b24.alt[c][i] <= b26[c][i], `col ${c} row ${i}`);
+    if (b24.weights[i] <= 50) assert.equal(b24.alt[c][i], b26[c][i]);
+    if (i > 0) assert.ok(b24.alt[c][i] <= b24.alt[c][i - 1]);
+    if (c > 0) assert.ok(b24.alt[c][i] <= b24.alt[c - 1][i]);
+  }
+  assert.equal(b26[0][9] - b24.alt[0][9], 5700);   // 85 t, ISA+10: the largest gap on the chart pair at that column
+});

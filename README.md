@@ -1,6 +1,6 @@
 # EDTO CRZ
 
-Offline web app for B737 engine-inop EDTO calculations. Bottom tabs: **CRZ | EDTO | REF | OMA**.
+Offline web app for B737 engine-inop EDTO calculations. Bottom tabs: **CRZ | EDTO | REF | OMA | QRH**.
 
 One `index.html` (all CSS and app code inline) plus `perf.js` (chart data and calculations) and
 `crz.js` (OFP parser, WGS84 route geometry, renomination maths). No build step. Hosted from the repo root on GitHub Pages.
@@ -19,6 +19,11 @@ One `index.html` (all CSS and app code inline) plus `perf.js` (chart data and ca
 Short reference: EDTO terms, diversion strategies, the renomination steps and both critical fuel checks,
 summarised from the MAS "EDTO Basics & Procedures" handout.
 
+## QRH tab
+The EDTO pages of the 737 QRH (OI.4.1 to OI.4.7) in flight order: before departure, before the EEP, the alternate
+flow chart, re-nomination, the briefing, and monitoring. Includes the engine-inop altitude capability charts (OI.4.6,
+with the CFM56-7B24 in-flight table) and the critical fuel chart (OI.4.7), drawn from the same data as the calculators.
+
 ## OMA tab
 OM-A (Rev 10.3.0, 10 Mar 2026) EDTO policy in flight order: airports and minima, period of suitability,
 fuel, crew preparation, before the EEP, and inside the EDTO segment. Paragraph numbers are shown.
@@ -27,7 +32,7 @@ fuel, crew preparation, before the EEP, and inside the EDTO segment. Paragraph n
 - **Altitude capability:** ZFW, fuel on board, current UTC, ETA ETP, burn rate, ISA, anti-ice →
   time to ETP, fuel to burn, fuel remaining, gross weight at ETP, altitude capability (LRC and 310 KIAS).
 - **Critical fuel:** distance, weight at critical point, wind, ISA, icing → engine-inop critical fuel.
-- Data: B737-800, D6-27370-8H6-MAS OI.4.6 (1 Oct 2024). **737-8 has no data yet.**
+- Data: B737-800, D6-27370-8H6-MAS OI.4.6 and OI.4.7 (1 Oct 2024). **737-8 has no data yet.**
 - Linear interpolation only, never extrapolates. Altitudes round down to 100 ft, critical fuel up to 100 kg.
 
 ## Run locally
