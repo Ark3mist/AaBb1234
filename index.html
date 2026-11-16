@@ -18,16 +18,22 @@
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c;
+  --h-ink:#1e293b; --h-rule:#cbd5e1; --caution:#b45309; --act-bg:rgba(16,185,129,.12); --act-bd:#059669; --act-ink:#047857;
+  --limit-bg:#fef3c7; --limit-bd:#b45309; --limit-ink:#78350f;
   --ocean:#cfe2ee; --land:#ece6d3; --coast:#a39a80; --grid:rgba(17,24,39,.12); --halo:#ffffff; --route:#334155; --wind:#1d4ed8;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
+  --h-ink:#e2e8f0; --h-rule:#1e293b; --caution:#fbbf24; --act-bg:rgba(16,185,129,.15); --act-bd:#10b981; --act-ink:#34d399;
+  --limit-bg:rgba(251,191,36,.16); --limit-bd:#fbbf24; --limit-ink:#fef3c7;
   --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1; --wind:#93c5fd;
 }}
 :root[data-theme="dark"]{
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
+  --h-ink:#e2e8f0; --h-rule:#1e293b; --caution:#fbbf24; --act-bg:rgba(16,185,129,.15); --act-bd:#10b981; --act-ink:#34d399;
+  --limit-bg:rgba(251,191,36,.16); --limit-bd:#fbbf24; --limit-ink:#fef3c7;
   --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1; --wind:#93c5fd;
 }
 *{box-sizing:border-box}
@@ -51,7 +57,7 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .tabbar button[aria-current=page]{color:var(--accent);background:var(--soft)}
 .tabbar button[aria-current=page] svg{transform:scale(1.08)}
 section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
-h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-ink);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--h-rule);display:flex;justify-content:space-between;align-items:center;gap:8px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
 input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
@@ -109,6 +115,13 @@ h2>span{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-cont
 button.link.danger{color:var(--err)}
 textarea{width:100%;font:13px ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px}
 .btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.caution{color:var(--caution);font-weight:600}
+.limit{display:inline-block;font-weight:700;color:var(--limit-ink);background:var(--limit-bg);border:1px solid var(--limit-bd);border-radius:5px;padding:0 6px;white-space:nowrap}
+button[data-goto]{padding:9px 14px;border-radius:8px;background:var(--act-bg);border:1px solid var(--act-bd);color:var(--act-ink);font-weight:600}
+button[data-goto]:active{background:rgba(16,185,129,.3)}
+.acts{list-style:disc;margin:6px 0 0;padding-left:18px;display:grid;gap:5px}
+.acts li{font-size:14px;line-height:1.45;padding-left:2px}
+.acts li::marker{color:var(--h-ink)}
 .fphead{font-size:20px;font-weight:700;margin:0 0 2px}
 .fphead small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
 .kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;margin:10px 0 0;font-size:14px}
@@ -157,10 +170,11 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 .steps{list-style:none;margin:10px 0 0;padding:0;counter-reset:st;display:grid;gap:10px}
 .steps>li{counter-increment:st;display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:14px;line-height:1.45}
-.steps>li::before{content:counter(st);width:24px;height:24px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
-.steps h4{margin:14px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);grid-column:1/-1}
+.steps>li::before{content:counter(st);width:24px;height:24px;border-radius:50%;background:#10B981;color:#090D10;font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
+.steps h4{margin:14px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-ink);grid-column:1/-1}
 .steps>li.h{display:block;counter-increment:none} .steps>li.h::before{display:none}
-.key{display:inline-block;font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.key{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.95em;font-weight:600;line-height:1.25;color:#38BDF8;background:#1E293B;border:1px solid #475569;border-radius:5px;padding:2px 6px;white-space:nowrap;max-width:100%}
+.key.wide{white-space:normal;overflow-wrap:anywhere}
 .val{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--accent);white-space:nowrap}
 .aptname{font-size:12px;color:var(--muted);margin-top:3px;min-height:1.2em}
 .aptname.bad{color:var(--err)}
@@ -175,10 +189,10 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 .terms dt{font-weight:700;font-size:14px}
 .terms dd{margin:2px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
 .ptsbox{margin-top:10px}
-.ptsbox h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ptsbox h4{margin:0 0 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-ink)}
 .ptsbox td.pos{font-weight:700;color:var(--accent)}
 .omref{display:inline-block;font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap;vertical-align:1px}
-h2>.phase{display:inline-grid;place-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:700;letter-spacing:0;margin-right:8px;flex:none}
+h2>.phase{display:inline-grid;place-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#10B981;color:#090D10;font-size:12px;font-weight:700;letter-spacing:0;margin-right:8px;flex:none}
 h2:has(.phase){justify-content:flex-start;gap:0}
 .pts{margin:10px 0 0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.45}
 [data-view=oma] td,[data-view=oma] th{white-space:normal;vertical-align:top}
@@ -397,8 +411,24 @@ h2:has(.phase){justify-content:flex-start;gap:0}
       <p class="refp">Needed when an en-route alternate becomes unsuitable after departure (weather, NOTAM, closure). Pick the new airport from the EDTO area of operations chart, then use the FMC. <b>Never press EXEC</b> during this work.</p>
       <ol class="steps">
         <li><div><b>Suitability.</b> Check latest weather and NOTAMs for the new alternates (ACARS if available).</div></li>
-        <li><div><b>EDP.</b> LEGS last page: enter EA1 then EA2, note track and distance. Type <span class="key">EA2/-half distance</span> between them to make the halfway fix. Put it on the FIX page and erase EA1 and EA2 from LEGS. Enter the track <b>+90°</b> if the route is to the right, <b>−90°</b> if to the left. Line-select that radial and put it in LEGS on the leg it crosses. That waypoint is the EDP.</div></li>
-        <li><div><b>ETP.</b> Check winds are in RTE DATA. Put EA1 under the EDP, read its ETA on RTE DATA, ERASE. Same for EA2. Shift = <span class="key">ETA difference ÷ 2 × NM per min</span> (8 NM/min at 480 kt TAS, so difference × 4). Move the EDP <b>into the wind</b> with <span class="key">EDP/±NM</span>. Recheck; adjust 1 or 2 NM until the ETAs match.</div></li>
+        <li><div><b>EDP.</b> Find the point equal in distance to both alternates.
+          <ul class="acts">
+            <li><b>Enter</b> EA1, then EA2, on the last LEGS page. <span class="caution">Do not execute.</span> <b>Note</b> the track and distance.</li>
+            <li><b>Type</b> <span class="key wide">EA2/-half distance</span> between them to make the halfway fix.</li>
+            <li><b>Move</b> the halfway fix to the FIX page, then <b>erase</b> EA1 and EA2 from LEGS.</li>
+            <li><b>Enter</b> the track <b>+90°</b> if the route is to the right, <b>−90°</b> if to the left.</li>
+            <li><b>Line-select</b> that radial and <b>put</b> it in LEGS on the leg it crosses. That waypoint is the EDP.</li>
+          </ul></div></li>
+        <li><div><b>ETP.</b> Find the point equal in time to both alternates.
+          <ul class="acts">
+            <li><b>Check</b> the winds are in <b>RTE DATA</b>.</li>
+            <li><b>Put</b> EA1 under the EDP. <span class="caution">Do not execute.</span></li>
+            <li><b>Read</b> its ETA on RTE DATA, then <b>ERASE</b>.</li>
+            <li><b>Repeat</b> for EA2.</li>
+            <li><b>Calculate</b> the shift: <span class="key wide">ETA difference ÷ 2 × NM per min</span> (8 NM/min at 480 kt TAS, so difference × 4).</li>
+            <li><b>Move</b> the EDP <b>into the wind</b>: <span class="key">EDP/±NM</span> (tailwind −, headwind +).</li>
+            <li><b>Recheck</b> both ETAs. <b>Adjust</b> 1 or 2 NM until they match.</li>
+          </ul></div></li>
         <li><div><b>Critical fuel by FMC.</b> See below.</div></li>
         <li><div><b>Critical fuel by chart.</b> See below.</div></li>
       </ol>
@@ -408,15 +438,15 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 
     <section>
       <h2>Critical fuel check · FMC</h2>
-      <p class="refp">A quick cross-check of fuel on arrival at the alternate from the ETP, depressurised. PROGRESS is next to EXEC: go slowly.</p>
+      <p class="refp">A quick cross-check of fuel on arrival at the alternate from the ETP, depressurised. <span class="caution">PROGRESS is next to EXEC: go slowly.</span></p>
       <ol class="steps">
-        <li><div><b>RTE</b> page 1: enter the alternate as DEST. Do not execute.</div></li>
+        <li><div><b>RTE</b> page 1: enter the alternate as DEST. <span class="caution">Do not execute.</span></div></li>
         <li><div><b>CRZ</b> page: set the strategy speed. Fuel critical = standard strategy, <span class="key">280</span> kt.</div></li>
         <li><div><b>DES</b> page: speed <span class="key">280</span>, delete the 10,000 ft speed restriction.</div></li>
         <li><div><b>LEGS:</b> at the ETP enter <span class="key">280/10000</span>.</div></li>
         <li><div>Put the alternate right under the ETP as the last waypoint, with <span class="key">/1500</span>.</div></li>
         <li><div>Optional, for a better descent path: <span class="key">ETP/50</span> placed after the ETP.</div></li>
-        <li><div><b>PROGRESS:</b> fuel at the alternate must be above <b>2,400 kg</b>.</div></li>
+        <li><div><b>PROGRESS:</b> fuel at the alternate must be above <span class="limit">2,400 kg</span>.</div></li>
       </ol>
     </section>
 
@@ -715,7 +745,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-09-26";
+  const APP_VERSION = "1-10-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -1009,14 +1039,21 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     h += `<li><div>Check the latest weather and NOTAMs for ${K(a1.id)} and ${K(a2.id)} before using them. The app cannot check this.</div></li>`;
 
     h += `<li class="h"><h4>Step 2 · Equal distance point (EDP)</h4></li>`;
-    h += `<li><div><b>LEGS</b>, last page: enter ${K(a1.id)} then ${K(a2.id)} below it. <b>Do not execute.</b> Note the track and distance from ${esc(a1.id)} to ${esc(a2.id)}: expect about ${V(deg(r.trackM))} / ${V(nm(r.trackDist))}. <span class="s">(${deg(r.trackT)} true)</span></div></li>`;
+    h += `<li><div><b>LEGS</b>, last page: enter ${K(a1.id)} then ${K(a2.id)} below it. <span class="caution">Do not execute.</span> Note the track and distance from ${esc(a1.id)} to ${esc(a2.id)}: expect about ${V(deg(r.trackM))} / ${V(nm(r.trackDist))}. <span class="s">(${deg(r.trackT)} true)</span></div></li>`;
     h += `<li><div>Half the distance: ${Math.round(r.trackDist)} ÷ 2 = ${V(halfN + " NM")}. Type ${K(a2.id + "/-" + halfN)} and put it between ${esc(a1.id)} and ${esc(a2.id)}. This makes the halfway fix, named like ${K(f1)}. <span class="s">(${CRZ.fmtLatLon(r.mid)})</span></div></li>`;
     h += `<li><div>Line-select ${K(f1)} into the <b>FIX</b> page (1L), then erase ${esc(a1.id)} and ${esc(a2.id)} from LEGS.</div></li>`;
     h += `<li><div>The route is on the <b>${r.side}</b> of the ${esc(a1.id)}→${esc(a2.id)} track, so ${r.side === "right" ? "add" : "subtract"} 90°: ${Math.round(r.trackM)} ${r.side === "right" ? "+" : "−"} 90 = ${V(pad(typed, 3) + "°")}. Enter ${K(pad(typed, 3))} on a FIX line. A dashed line appears, crossing the route about ${V(radDist + " NM")} from ${esc(f1)}.${Math.abs(((typed - exact + 540) % 360) - 180) >= 2 ? ` <span class="s">(the exact 90° line at the fix is ${pad(exact, 3)}°; the track turns slightly along a long great circle)</span>` : ""}</div></li>`;
     h += `<li><div>Line-select the radial line to copy it to the scratchpad, go to <b>LEGS</b> and put it between ${legTxt(r.edpLeg)}. This makes ${K(f2)}: the <b>EDP</b>.<div class="resbox">EDP ${V(CRZ.fmtLatLon(r.edp))}<br>${V(nm(r.edpDist1))} to each airport</div></div></li>`;
 
     h += `<li class="h"><h4>Step 3 · Equal time point (ETP)</h4></li>`;
-    h += `<li><div>Check the winds are in <b>RTE DATA</b>. Put ${K(a1.id)} under ${K(f2)}, press RTE DATA, note its ETA, then ERASE. Repeat with ${K(a2.id)}. Enter the two ETAs here:
+    h += `<li><div><b>Get the ETA to each alternate from the EDP.</b>
+      <ul class="acts">
+        <li><b>Check</b> the winds are in <b>RTE DATA</b>.</li>
+        <li><b>Put</b> ${K(a1.id)} under ${K(f2)}. <span class="caution">Do not execute.</span></li>
+        <li><b>Read</b> its ETA on RTE DATA, then <b>ERASE</b>.</li>
+        <li><b>Repeat</b> with ${K(a2.id)}.</li>
+        <li><b>Enter</b> the two ETAs:</li>
+      </ul>
       <div class="r2"><div><label for="eta1">FMC ETA ${esc(a1.id)}</label><input id="eta1" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta1 || "")}"></div><div><label for="eta2">FMC ETA ${esc(a2.id)}</label><input id="eta2" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta2 || "")}"></div></div>
       <div id="etaOut"></div></div></li>`;
     h += `<li><div>Until you have the FMC ETAs, this is the app's estimate, using one wind for both diversions:
