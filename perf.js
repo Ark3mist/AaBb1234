@@ -5,7 +5,11 @@
   "use strict";
 
   // ---------- B737-800 ENGINE INOP data ----------
-  // Source: D6-27370-8H6-MAS, OI.4.6, October 01, 2024. Transcribed by hand.
+  // Source: D6-27370-8H6-MAS, OI.4.5 and OI.4.6, October 01, 2024 (EDTO, engine inop, B737-800).
+  // Checked cell by cell against the QRH text on 16 Nov 2026: 148 cells and the footnote values all match.
+  // These are the CFM56-7B26 figures. The in-flight QRH also has a CFM56-7B24 table that is much lower
+  // for LRC at high weights (about 2,700 ft lower at 68.4 t, ISA+12). The QRH text does not say which
+  // registrations each applies to: confirm with your fleet data before relying on this for a B24 aircraft.
   // "-" cells in the chart are null (no data).
   const B738 = {
     criticalFuel: {

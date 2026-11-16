@@ -61,3 +61,34 @@ test("critical fuel: chart points, wind, corrections, limits", () => {
   assert.ok(criticalFuel(d, { ...base, distNm: 350, weightT: 65 }).error);
   assert.ok(criticalFuel(d, { ...base, distNm: 1000, weightT: 65, windKt: -60 }).error);
 });
+
+test("altitude capability interpolates on both axes at once: weight, then ISA (bilinear from the four chart corners)", () => {
+  const d = B738.altitudeCapability;
+  // Photo case: GW 68.403 t, ISA +12. Corners: 65 t and 70 t, ISA+10 and ISA+15.
+  const f = (68.403 - 65) / 5;
+  const at10 = 22500 + (20900 - 22500) * f, at15 = 21300 + (19700 - 21300) * f;     // weight first
+  const lrc = at10 + (at15 - at10) * 0.4;                                             // then ISA, 12 is 40% of 10..15
+  near(altitudeCapability(d, "lrc", 68.403, 12), lrc, 1e-9);
+  near(lrc, 20931, 1);
+  near(altitudeCapability(d, "lrc", 68.403, 12, "engine"), lrc - 1200, 1e-9);
+  near(altitudeCapability(d, "lrc", 68.403, 12, "engineWing"), lrc - 5500, 1e-9);
+  const k10 = 17500 + (16700 - 17500) * f, k15 = 15800 + (15100 - 15800) * f;          // 310 KIAS chart, 65 t and 70 t rows
+  const k = k10 + (k15 - k10) * 0.4;
+  near(altitudeCapability(d, "kias310", 68.403, 12), k, 1e-9);
+  near(k, 16303, 1);
+  near(altitudeCapability(d, "kias310", 68.403, 12, "engineWing"), k - 4900, 1e-9);
+  // Not the next-higher-column rule: ISA+12 must sit between the ISA+10 and ISA+15 answers.
+  assert.ok(altitudeCapability(d, "lrc", 68.403, 12) < altitudeCapability(d, "lrc", 68.403, 10));
+  assert.ok(altitudeCapability(d, "lrc", 68.403, 12) > altitudeCapability(d, "lrc", 68.403, 15));
+  // Midpoint of a cell on both axes is the mean of its four corners (a bilinear surface is linear along each axis).
+  near(altitudeCapability(d, "lrc", 72.5, 12.5), (20900 + 19200 + 19700 + 17400) / 4, 1e-9);
+  near(altitudeCapability(d, "lrc", 47.5, 17.5), (30500 + 27700 + 29200 + 25800) / 4, 1e-9);
+  // Exactly on a column the answer is that column, interpolated in weight only.
+  near(altitudeCapability(d, "lrc", 68.403, 15), 21300 + (19700 - 21300) * f, 1e-9);
+  near(altitudeCapability(d, "lrc", 68.403, 20), 19800 + (17300 - 19800) * f, 1e-9);
+  // No extrapolation on either axis; below ISA+10 the chart says "and below", so the ISA+10 column is used.
+  assert.equal(altitudeCapability(d, "lrc", 68.403, 20.1), null);
+  assert.equal(altitudeCapability(d, "lrc", 39.9, 12), null);
+  assert.equal(altitudeCapability(d, "lrc", 85.1, 12), null);
+  near(altitudeCapability(d, "lrc", 68.403, -5), altitudeCapability(d, "lrc", 68.403, 10), 1e-9);
+});
