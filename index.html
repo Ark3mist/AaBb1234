@@ -18,17 +18,17 @@
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c;
-  --ocean:#cfe2ee; --land:#ece6d3; --coast:#a39a80; --grid:rgba(17,24,39,.12); --halo:#ffffff; --route:#334155;
+  --ocean:#cfe2ee; --land:#ece6d3; --coast:#a39a80; --grid:rgba(17,24,39,.12); --halo:#ffffff; --route:#334155; --wind:#1d4ed8;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
-  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1;
+  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1; --wind:#93c5fd;
 }}
 :root[data-theme="dark"]{
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
-  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1;
+  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1; --wind:#93c5fd;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -142,6 +142,12 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 #map text.e{fill:var(--accent);fill-opacity:.6;font-weight:500}
 #map .end{fill:var(--route);stroke:var(--halo);stroke-width:1.5}
 #map .trk{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
+#map .barb{stroke:var(--wind);stroke-width:1.6;fill:var(--wind);stroke-linecap:round;stroke-linejoin:round}
+#map .barb.calm{fill:none}
+#map text.w{fill:var(--wind);font:600 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mapctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px}
+.mapctl .chk{margin:0}
+.mapctl select{width:auto;min-width:150px}
 #map .bis{stroke:#16a34a;stroke-width:1.8;stroke-dasharray:7 5;fill:none}
 #map .pt{stroke:var(--halo);stroke-width:1.5}
 #map .pt.edp{fill:#16a34a} #map .pt.etp{fill:var(--err)} #map .pt.ee{fill:var(--warn)} #map .pt.ofp{fill:none;stroke:var(--muted);stroke-width:1.5}
@@ -221,6 +227,10 @@ h2:has(.phase){justify-content:flex-start;gap:0}
       <div class="mapwrap">
         <svg id="map" role="img" aria-label="Route map with 60 minute rings around the EDTO alternates"></svg>
         <div class="zoomctl"><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zOut" aria-label="Zoom out">−</button><button type="button" id="zFit" aria-label="Fit route" title="Fit route">⤢</button></div>
+      </div>
+      <div class="mapctl">
+        <label class="chk"><input type="checkbox" id="windOn"> Show wind</label>
+        <select id="windFl" aria-label="Wind level"></select>
       </div>
       <div class="legend" id="mapLegend"></div>
     </section>
@@ -705,7 +715,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-08-26";
+  const APP_VERSION = "1-09-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -1176,6 +1186,19 @@ h2:has(.phase){justify-content:flex-start;gap:0}
       seg.push(calc.exp);
       out.push(`<path class="seg" d="${path(seg)}"/>`);
     }
+    // OFP winds at the chosen level, drawn as wind barbs (staff points to where the wind comes from)
+    let windShown = 0;
+    if (mapWind.on) {
+      ofp.points.forEach((p) => {
+        const w = ((ofp.winds && ofp.winds[p.name]) || []).find((x) => x.fl === mapWind.fl);
+        if (!w) return;
+        const [x, y] = S(p);
+        out.push(barb(x, y, w.dir, w.kt, p.lat < 0));
+        const t = w.dir * Math.PI / 180;
+        labels.push({ p, text: (w.oat > 0 ? "+" : w.oat < 0 ? "−" : "") + Math.abs(w.oat), cls: "w", at: [x - Math.sin(t) * 14, y + Math.cos(t) * 14] });
+        windShown++;
+      });
+    }
     // waypoints
     ofp.points.forEach((p, i) => {
       const [x, y] = S(p), end = i === 0 || i === ofp.points.length - 1;
@@ -1200,9 +1223,9 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     // place labels: forced ones first, then waypoint names where there is room
     labels.sort((a, b) => (b.force ? 1 : 0) - (a.force ? 1 : 0));
     for (const L of labels) {
-      const [x, y] = S(L.p), w = L.text.length * 6.6 + 4, hgt = 13;
+      const [x, y] = L.at || S(L.p), w = L.text.length * 6.6 + 4, hgt = 13;
       if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
-      const tries = [[8, 4, "start"], [-8, 4, "end"], [0, -9, "middle"], [0, 17, "middle"], [8, -8, "start"], [8, 15, "start"], [-8, -8, "end"], [-8, 15, "end"]];
+      const tries = L.at ? [[0, 4, "middle"]] : [[8, 4, "start"], [-8, 4, "end"], [0, -9, "middle"], [0, 17, "middle"], [8, -8, "start"], [8, 15, "start"], [-8, -8, "end"], [-8, 15, "end"]];
       for (const [dx, dy, anchor] of tries) {
         const bx = anchor === "start" ? x + dx : anchor === "end" ? x + dx - w : x - w / 2, by = y + dy - hgt + 2;
         const box = [bx, by, bx + w, by + hgt];
@@ -1215,6 +1238,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     svg.innerHTML = out.join("");
     $("mapSub").textContent = `60 min ring = ${calc.R} NM`;
     $("mapLegend").innerHTML = `<span><i style="background:var(--accent)"></i>EDTO alternate, 60 min ring</span>` +
+      (mapWind.on ? `<span><i style="background:var(--wind)"></i>${windShown ? `OFP wind FL${pad(mapWind.fl, 3)}: pennant 50, long barb 10, short 5 kt; number = temperature °C` : `No OFP wind at FL${pad(mapWind.fl, 3)}`}</span>` : "") +
       (eraApts.length ? `<span><i style="background:var(--accent);opacity:.35"></i>Other ERA (${eraApts.map((a) => esc(a.id)).join(" ")})</span>` : "") +
       (r ? `<span><i style="background:var(--warn)"></i>EEP / EXP</span><span><i style="background:#16a34a"></i>halfway fix, 90° line, EDP</span><span><i style="background:var(--err)"></i>ETP, EDTO segment</span>` : "");
   }
@@ -1255,7 +1279,38 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     if (b.dataset.open) setEdto({ calc: b.dataset.open });
     showTab(b.dataset.goto);
   }));
-  function renderAll() { proj = null; compute(); renderSummary(); renderRen(); drawMap(); }
+  // ---------- wind layer ----------
+  let mapWind = Object.assign({ on: false, fl: null }, store.get("crz.mapWind") || {});
+  /** Standard wind barb at (x, y): staff toward the wind's origin, feathers from the outer end. */
+  function barb(x, y, dir, kt, south) {
+    const v = Math.round(kt / 5) * 5;
+    if (v < 5) return `<circle class="barb calm" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`;
+    const t = dir * Math.PI / 180, ux = Math.sin(t), uy = -Math.cos(t);          // outward along the staff
+    const side = south ? -1 : 1, px = -uy * side, py = ux * side;                // feathers: right of the staff in the north, left in the south
+    const LEN = 26, GAP = 4.5, F = 11;
+    const at = (d) => [x + ux * d, y + uy * d];
+    const f = (n) => n.toFixed(1);
+    let d = LEN, rest = v, out = `M${f(x)} ${f(y)}L${f(at(LEN)[0])} ${f(at(LEN)[1])}`, tri = "";
+    while (rest >= 50) { const a = at(d), b = at(d - 6), c = [a[0] - ux * 3 + px * F, a[1] - uy * 3 + py * F]; tri += `M${f(a[0])} ${f(a[1])}L${f(c[0])} ${f(c[1])}L${f(b[0])} ${f(b[1])}Z`; d -= 7.5; rest -= 50; }
+    if (v % 50 === 5 && v < 50 && rest === 5) d -= GAP;                           // a lone short barb sits in from the end
+    while (rest >= 10) { const a = at(d); out += `M${f(a[0])} ${f(a[1])}L${f(a[0] + ux * 3.5 + px * F)} ${f(a[1] + uy * 3.5 + py * F)}`; d -= GAP; rest -= 10; }
+    if (rest >= 5) { const a = at(d); out += `M${f(a[0])} ${f(a[1])}L${f(a[0] + ux * 1.75 + px * F / 2)} ${f(a[1] + uy * 1.75 + py * F / 2)}`; }
+    return `<path class="barb" style="fill:none" d="${out}"/>` + (tri ? `<path class="barb" d="${tri}"/>` : "");
+  }
+  function renderWindCtl() {
+    const sel = $("windFl");
+    const levels = [...new Set(ofp ? ofp.points.flatMap((p) => ((ofp.winds && ofp.winds[p.name]) || []).map((w) => w.fl)) : [])].sort((a, b) => b - a);
+    if (!levels.includes(mapWind.fl)) mapWind.fl = levels.includes(ofp && ofp.cruiseFL) ? ofp.cruiseFL : (levels[0] ?? null);
+    const count = (fl) => ofp.points.filter((p) => ((ofp.winds && ofp.winds[p.name]) || []).some((w) => w.fl === fl)).length;
+    sel.innerHTML = levels.map((fl) => `<option value="${fl}"${fl === mapWind.fl ? " selected" : ""}>FL${pad(fl, 3)}${ofp.cruiseFL === fl ? " · plan" : ""} · ${count(fl)} pts</option>`).join("") || "<option>no wind table</option>";
+    sel.disabled = !levels.length || !mapWind.on; $("windOn").disabled = !levels.length;
+    $("windOn").checked = !!mapWind.on && levels.length > 0;
+    if (!levels.length) mapWind.on = false;
+  }
+  $("windOn").addEventListener("change", (e) => { mapWind.on = e.target.checked; store.set("crz.mapWind", mapWind); renderWindCtl(); drawMap(); });
+  $("windFl").addEventListener("change", (e) => { mapWind.fl = +e.target.value; store.set("crz.mapWind", mapWind); drawMap(); });
+
+  function renderAll() { proj = null; compute(); renderSummary(); renderRen(); if (ofp) renderWindCtl(); drawMap(); }
   renderAll();
 })();
 </script>
