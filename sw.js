@@ -1,6 +1,6 @@
 // Caches the app so it opens with no connection (after one online visit).
 // Bump CACHE together with version.json and APP_VERSION in index.html.
-const CACHE = "edto-crz-1-10-26";
+const CACHE = "edto-crz-1-09-26";
 const FILES = ["./", "index.html", "perf.js", "crz.js", "wmm.js", "airports.js", "world50.js", "vendor/pdfjs/pdf.min.js", "vendor/pdfjs/pdf.worker.min.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

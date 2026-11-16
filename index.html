@@ -145,23 +145,6 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 #map .barb{stroke:var(--wind);stroke-width:1.6;fill:var(--wind);stroke-linecap:round;stroke-linejoin:round}
 #map .barb.calm{fill:none}
 #map text.w{fill:var(--wind);font:600 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-#map .sig{fill:var(--c);fill-opacity:.16;stroke:var(--c);stroke-width:1.4;stroke-linejoin:round}
-#map .sig.sel{fill-opacity:.32;stroke-width:3}
-#map .sig.fut{stroke-dasharray:5 4;fill-opacity:.08}
-#map text.sg{font-size:10px;fill:var(--ink)}
-#sigBox{margin-top:10px}
-#sigBox .note{margin:0 0 8px}
-#sigBox .note .btnrow{margin-top:8px}
-.sigrow{border-top:1px solid var(--line);padding:6px 0;font-size:13px}
-.sigrow summary{list-style:none;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center;color:var(--ink);font-size:13px}
-.sigrow summary::-webkit-details-marker{display:none}
-.sigrow .dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c)}
-.sigrow .raw{margin:6px 0 2px;padding:8px;border-radius:6px;background:var(--field);font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}
-.sigrow .b{font-size:10.5px;font-weight:700;border-radius:4px;padding:0 5px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-.sigrow .b.hot{color:var(--err);border-color:var(--err)}
-.sigrow .b.warn{color:var(--warn);border-color:var(--warn)}
-.stale{color:var(--warn);font-weight:600} .dead{color:var(--err);font-weight:600}
-#sigFeedIn{font-size:14px}
 .mapctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px}
 .mapctl .chk{margin:0}
 .mapctl select{width:auto;min-width:150px}
@@ -220,7 +203,6 @@ h2:has(.phase){justify-content:flex-start;gap:0}
       <dd><div class="seg" id="themeSeg" role="radiogroup" aria-label="Appearance"><button type="button" data-theme="device" role="radio">Device</button><button type="button" data-theme="light" role="radio">Light</button><button type="button" data-theme="dark" role="radio">Dark</button></div></dd>
       <dt>Version</dt><dd id="verTxt" class="mono"></dd>
       <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span id="updMsg" class="s"></span></dd>
-      <dt>SIGMET feed</dt><dd><input id="sigFeedIn" type="url" inputmode="url" placeholder="default: GitHub relay" autocomplete="off" spellcheck="false"><div class="s" id="sigFeedMsg" style="margin-top:4px">Leave empty to use the app’s own relay. To use your own, paste an https address that returns the aviationweather.gov <code>isigmet?format=json</code> data.</div></dd>
       <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · OM-A Table 8.5.6.6(1), Rev 10.3.0</dd>
       <dt>Credits</dt><dd class="s">PDF.js (Apache 2.0) · airportsdata (MIT) · Natural Earth land outlines · World Magnetic Model 2025</dd>
     </dl>
@@ -249,16 +231,6 @@ h2:has(.phase){justify-content:flex-start;gap:0}
       <div class="mapctl">
         <label class="chk"><input type="checkbox" id="windOn"> Show wind</label>
         <select id="windFl" aria-label="Wind level"></select>
-      </div>
-      <div class="mapctl">
-        <label class="chk"><input type="checkbox" id="sigOn"> Show SIGMET</label>
-        <button type="button" id="sigUpd">Update SIGMET</button>
-      </div>
-      <div id="sigBox" hidden>
-        <div class="note" id="sigPrompt" hidden></div>
-        <div class="s" id="sigStatus"></div>
-        <div id="sigList"></div>
-        <div class="hint">International SIGMETs from aviationweather.gov, through a relay. Not an official briefing: a missing SIGMET on the map is not proof there is none. Get the SIGMETs for your FIRs from dispatch and ATC.</div>
       </div>
       <div class="legend" id="mapLegend"></div>
     </section>
@@ -743,7 +715,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-10-26";
+  const APP_VERSION = "1-09-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -1115,11 +1087,11 @@ h2:has(.phase){justify-content:flex-start;gap:0}
   const onEa = (k) => (e) => {
     const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); e.target.value = v;
     ren[k] = v; ren.manual = false; ren.windPt = null; ren.eta1 = ren.eta2 = "";
-    store.set("crz.ren", ren); compute(); renderRen(); view = null; renderSig(); drawMap();
+    store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap();
   };
   $("ea1").addEventListener("input", onEa("ea1"));
   $("ea2").addEventListener("input", onEa("ea2"));
-  $("renReset").addEventListener("click", () => { ren = {}; store.set("crz.ren", ren); compute(); renderRen(); view = null; renderSig(); drawMap(); });
+  $("renReset").addEventListener("click", () => { ren = {}; store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap(); });
 
   // ---------- map ----------
   let LAND = null, view = null, proj = null, raf = 0;
@@ -1195,9 +1167,6 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     // 60 min rings
     eraRings.forEach((r) => out.push(`<path class="ring era" d="${path(r.pts)}Z"/>`));
     rings.forEach((r) => out.push(`<path class="ring" d="${path(r.pts)}Z"/>`));
-    // SIGMET areas, drawn over the rings and under the route
-    const sigDrawn = sig.on && sigView ? sigView.rows : [];
-    sigDrawn.forEach((row) => row.it.rings.forEach((ring) => out.push(`<path class="sig${row.it.key === sigUi.sel ? " sel" : ""}${row.state === "future" ? " fut" : ""}" style="--c:${row.it.color}${row.it.geom === "LINE" ? ";fill:none" : ""}" d="${path(ring)}${row.it.geom === "LINE" ? "" : "Z"}"/>`)));
 
     // labels are placed after all shapes, skipping any that would overlap
     const labels = [], boxes = [];
@@ -1252,7 +1221,6 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     if (same) { const o = (ofp.edto.points || []).find((p) => /^ETP/.test(p.name) && p.lat != null); if (o) { const [x, y] = S(o); out.push(`<circle class="pt ofp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7"/>`); label(o, "OFP " + o.name, "m", true); } }
 
     // place labels: forced ones first, then waypoint names where there is room
-    sigDrawn.forEach((row) => { const c = CRZ.sigCentroid(row.it.rings[0]); labels.push({ p: c, text: row.it.hazard, cls: "sg", force: row.it.key === sigUi.sel }); });
     labels.sort((a, b) => (b.force ? 1 : 0) - (a.force ? 1 : 0));
     for (const L of labels) {
       const [x, y] = L.at || S(L.p), w = L.text.length * 6.6 + 4, hgt = 13;
@@ -1270,7 +1238,6 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     svg.innerHTML = out.join("");
     $("mapSub").textContent = `60 min ring = ${calc.R} NM`;
     $("mapLegend").innerHTML = `<span><i style="background:var(--accent)"></i>EDTO alternate, 60 min ring</span>` +
-      (sig.on && sigView && sigView.rows.length ? [...new Map(sigView.rows.map((r) => [r.it.hazard, r.it])).values()].map((it) => `<span><i style="background:${it.color}"></i>SIGMET ${esc(it.hazardName)}</span>`).join("") : "") +
       (mapWind.on ? `<span><i style="background:var(--wind)"></i>${windShown ? `OFP wind FL${pad(mapWind.fl, 3)}: pennant 50, long barb 10, short 5 kt; number = temperature °C` : `No OFP wind at FL${pad(mapWind.fl, 3)}`}</span>` : "") +
       (eraApts.length ? `<span><i style="background:var(--accent);opacity:.35"></i>Other ERA (${eraApts.map((a) => esc(a.id)).join(" ")})</span>` : "") +
       (r ? `<span><i style="background:var(--warn)"></i>EEP / EXP</span><span><i style="background:#16a34a"></i>halfway fix, 90° line, EDP</span><span><i style="background:var(--err)"></i>ETP, EDTO segment</span>` : "");
@@ -1305,7 +1272,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
     $("zOut").addEventListener("click", () => zoomAt(1 / 1.5, svg.clientWidth / 2, svg.clientHeight / 2));
     $("zFit").addEventListener("click", () => { view = null; drawMap(); });
     window.addEventListener("resize", () => { if (view && view.fit) view = null; drawMap(); });
-    window.addEventListener("tabshow", (e) => { if (e.detail === "crz") { if (view && view.fit) view = null; renderSig(); drawMap(); } });
+    window.addEventListener("tabshow", (e) => { if (e.detail === "crz") { if (view && view.fit) view = null; drawMap(); } });
   })();
 
   document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => {
@@ -1343,139 +1310,7 @@ h2:has(.phase){justify-content:flex-start;gap:0}
   $("windOn").addEventListener("change", (e) => { mapWind.on = e.target.checked; store.set("crz.mapWind", mapWind); renderWindCtl(); drawMap(); });
   $("windFl").addEventListener("change", (e) => { mapWind.fl = +e.target.value; store.set("crz.mapWind", mapWind); drawMap(); });
 
-  // ---------- SIGMET layer ----------
-  // Browsers cannot read aviationweather.gov directly (it sends no CORS header), so the app reads a relay:
-  // by default a copy refreshed every 10 minutes by a GitHub Action, or any https address set in Settings.
-  const SIG_DEFAULT = "https://raw.githubusercontent.com/Ark3mist/EDTO-CRZ-APP/sigmet-data/sigmet.json";
-  const SIG_STALE_MIN = 30, SIG_DEAD_MIN = 90, SNOOZE_MIN = 10;
-  let sig = { on: !!store.get("crz.sigOn") };
-  let sigData = store.get("crz.sigData");                       // { fetched, generated, items, rejected }
-  let sigUi = { busy: false, err: "", snooze: 0, sel: null };
-  let sigView = null;                                           // { rows, total, near, expired, key }
-  const feedUrl = () => { const u = String(store.get("crz.sigFeed") || "").trim(); return /^https:\/\//i.test(u) ? u : SIG_DEFAULT; };
-  const ageMin = (t) => (Date.now() - t) / 60000;
-  const zt = (t) => { const d = new Date(t); return pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "Z"; };
-  const zdt = (t, ref) => { const d = new Date(t), r = new Date(ref); return (d.getUTCDate() !== r.getUTCDate() ? pad(d.getUTCDate()) + "/" : "") + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "Z"; };
-  const agoTxt = (m) => (m < 1 ? "just now" : m < 90 ? Math.round(m) + " min ago" : (m / 60).toFixed(1) + " h ago");
-
-  async function fetchSigmet() {
-    if (sigUi.busy) return;
-    sigUi.busy = true; sigUi.err = ""; renderSig();
-    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
-    try {
-      const u = feedUrl();
-      const r = await fetch(u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 60000), { signal: ctl.signal, cache: "no-store" });
-      if (r.status === 404) throw new Error("The SIGMET relay has not published a feed yet (404). Check Settings, or try again after the relay has run.");
-      if (!r.ok && r.status !== 204) throw new Error("The feed answered HTTP " + r.status + ".");
-      const txt = r.status === 204 ? "" : await r.text();
-      let json = txt.trim() ? JSON.parse(txt) : [], generated = null;
-      if (json && !Array.isArray(json) && Array.isArray(json.records)) { generated = Number(json.generatedAt) || null; json = json.records; }
-      if (!Array.isArray(json)) throw new Error("The feed did not return a SIGMET list, so it is not shown. It may have changed format.");
-      const res = CRZ.parseISigmet(json);
-      if (!res.items.length && json.length) throw new Error("Received " + json.length + " records but could not read any of them. The feed format may have changed: do not rely on this layer.");
-      sigData = { fetched: Date.now(), generated: generated || Date.now(), generatedKnown: generated != null, items: res.items, rejected: res.rejected };
-      store.set("crz.sigData", sigData);
-      sigUi.snooze = 0;
-    } catch (e) {
-      sigUi.err = e.name === "AbortError" ? "The SIGMET feed did not answer within 20 seconds."
-        : e instanceof TypeError ? "Could not reach the SIGMET feed (offline, or the address is blocked)."
-        : e instanceof SyntaxError ? "The SIGMET feed did not return valid data."
-        : e.message;
-    } finally { clearTimeout(timer); sigUi.busy = false; renderSig(); drawMap(); }
-  }
-
-  /** Which SIGMETs matter for this flight, and how. */
-  function sigCompute() {
-    sigView = null;
-    if (!ofp || !route || !sigData || !Array.isArray(sigData.items)) return;
-    const now = Date.now();
-    const alts = [...new Map([calc && calc.a1, calc && calc.a2, ...((ofp.edto && ofp.edto.adequate) || []).map(airport), ...ofpAlts().map(airport)].filter(Boolean).map((a) => [a.id, a])).values()];
-    const pts = [...ofp.points, ...alts];
-    const fl = Number(ofp.cruiseFL);
-    let expired = 0, total = 0, near = 0;
-    const rows = [];
-    for (const it of sigData.items) {
-      it.key = it.id + "|" + it.from;
-      total++;
-      const state = CRZ.sigState(it, now);
-      if (state === "expired") { expired++; continue; }
-      if (!CRZ.sigNear(it.rings, pts, 7)) continue;
-      near++;
-      const h = CRZ.sigmetHits(route, it, alts, 5);
-      rows.push({ it, state, hit: h, atLevel: CRZ.sigCoversLevel(it, fl) });
-    }
-    const rank = (r) => (r.hit.route && r.atLevel ? 0 : r.hit.route ? 1 : r.hit.airports.length ? 2 : 3);
-    rows.sort((a, b) => rank(a) - rank(b) || (a.it.from || 0) - (b.it.from || 0));
-    sigView = { rows, total, near, expired, fl, key: [sigData.fetched, rows.map((r) => r.it.key + r.state).join(), alts.map((a) => a.id).join(), fl].join("#") };
-  }
-
-  function renderSig() {
-    const box = $("sigBox");
-    $("sigOn").checked = sig.on; $("sigUpd").disabled = sigUi.busy;
-    $("sigUpd").textContent = sigUi.busy ? "Updating…" : "Update SIGMET";
-    box.hidden = !(sig.on && ofp);
-    if (!ofp) return;
-    sigCompute();
-    if (!sig.on) return;
-    // status line
-    const st = $("sigStatus");
-    if (!sigData) st.innerHTML = "No SIGMET data loaded.";
-    else {
-      const m = ageMin(sigData.generated), cls = m > SIG_DEAD_MIN ? "dead" : m > SIG_STALE_MIN ? "stale" : "";
-      const v = sigView || { rows: [], total: 0, near: 0, expired: 0 };
-      const cross = v.rows.filter((r) => r.hit.route).length;
-      st.innerHTML = `Feed from <b class="mono">${zt(sigData.generated)}</b> <span class="${cls}">(${agoTxt(m)})</span>${sigData.generatedKnown ? "" : " · fetched here"}. ${v.total} SIGMETs worldwide, <b>${v.rows.length}</b> near this route, <b>${cross}</b> crossing it` +
-        `${v.expired ? `, ${v.expired} expired (hidden)` : ""}${sigData.rejected ? `, <span class="stale">${sigData.rejected} could not be read</span>` : ""}.` +
-        (cross === 0 && v.rows.length === 0 ? " Nothing listed near the route does not mean nothing is active." : "");
-    }
-    // prompt to update
-    const pr = $("sigPrompt");
-    const m = sigData ? ageMin(sigData.generated) : Infinity, snoozed = Date.now() < sigUi.snooze;
-    let msg = "";
-    if (sigUi.busy) msg = "";
-    else if (sigUi.err) msg = `<b>SIGMET not updated.</b> ${esc(sigUi.err)}${sigData ? " Showing the data from " + zt(sigData.generated) + " (" + agoTxt(m) + ")." : ""}`;
-    else if (!sigData) msg = "<b>No SIGMET data yet.</b> Update to load the current SIGMETs for this route?";
-    else if (m > SIG_STALE_MIN && !snoozed) msg = `<b>SIGMET data is ${agoTxt(m).replace(" ago", "")} old.</b> Update now?` + (m > SIG_DEAD_MIN ? " If it stays this old after updating, the relay has stopped: do not rely on it." : "");
-    pr.hidden = !msg;
-    if (msg) { pr.innerHTML = msg + `<div class="btnrow"><button type="button" class="ofpbtn" id="sigPrUpd">Update now</button>${sigUi.err ? "" : '<button type="button" id="sigPrLater">Later</button>'}</div>`; $("sigPrUpd").addEventListener("click", fetchSigmet); const l = $("sigPrLater"); if (l) l.addEventListener("click", () => { sigUi.snooze = Date.now() + SNOOZE_MIN * 60000; renderSig(); }); }
-    // list: only rebuilt when its content changes, so an open entry stays open
-    const list = $("sigList"), key = sigView ? sigView.key : "none";
-    if (list.dataset.k === key) return;
-    list.dataset.k = key;
-    if (!sigView || !sigView.rows.length) { list.innerHTML = ""; return; }
-    list.innerHTML = sigView.rows.map((r, i) => {
-      const it = r.it, h = r.hit, b = [];
-      if (h.route) b.push(`<span class="b hot">CROSSES ROUTE ${Math.round(h.from)}–${Math.round(h.to)} NM</span>`);
-      if (h.airports.length) b.push(`<span class="b hot">COVERS ${h.airports.map(esc).join(" ")}</span>`);
-      if (r.atLevel === true && (h.route || h.airports.length)) b.push(`<span class="b warn">FL${sigView.fl} ${it.base == null || it.top == null ? "POSSIBLY " : ""}INSIDE</span>`);
-      if (r.atLevel === false) b.push(`<span class="b">NOT AT FL${sigView.fl}</span>`);
-      if (it.geom === "LINE") b.push(`<span class="b warn">LINE: SEE TEXT</span>`);
-      if (r.state === "future") b.push(`<span class="b">STARTS ${zt(it.from)}</span>`);
-      const ref = it.from || Date.now();
-      return `<details class="sigrow" style="--c:${it.color}" data-i="${i}"${it.key === sigUi.sel ? " open" : ""}><summary><span class="dot"></span><b>${esc(it.hazard)}</b> ${esc(it.qualifier)} <span class="mono">${esc(it.id)}</span> ${it.from || it.to ? `<span class="mono">${it.from ? zdt(it.from, ref) : "?"}–${it.to ? zdt(it.to, ref) : "?"}</span>` : ""} ${it.levels ? `<span class="mono">${esc(it.levels)}</span>` : ""} ${b.join(" ")}</summary><div class="raw">${esc(it.raw || "(no text in the feed)")}</div></details>`;
-    }).join("");
-    list.querySelectorAll("details").forEach((d) => d.addEventListener("toggle", () => {
-      const row = sigView && sigView.rows[+d.dataset.i]; if (!row) return;
-      if (d.open) sigUi.sel = row.it.key; else if (sigUi.sel === row.it.key) sigUi.sel = null;
-      drawMap();
-    }));
-  }
-  $("sigOn").addEventListener("change", (e) => { sig.on = e.target.checked; store.set("crz.sigOn", sig.on); renderSig(); drawMap(); });
-  $("sigUpd").addEventListener("click", fetchSigmet);
-  setInterval(() => { if (sig.on && ofp && !$("mapSec").hidden) { const k = $("sigList").dataset.k; renderSig(); if ($("sigList").dataset.k !== k) drawMap(); } }, 60000);
-  // feed address (Settings)
-  (function () {
-    const inp = $("sigFeedIn"), msg = $("sigFeedMsg"), base = msg.innerHTML;
-    inp.value = store.get("crz.sigFeed") || "";
-    inp.addEventListener("change", () => {
-      const v = inp.value.trim();
-      if (v && !/^https:\/\/[^\s]+$/i.test(v)) { msg.innerHTML = '<span class="dead">Use an address starting with https://</span>'; inp.value = store.get("crz.sigFeed") || ""; return; }
-      store.set("crz.sigFeed", v); msg.innerHTML = base;
-      sigData = null; store.set("crz.sigData", null); sigUi.err = ""; renderSig(); drawMap();
-    });
-  })();
-
-  function renderAll() { proj = null; compute(); renderSummary(); renderRen(); if (ofp) renderWindCtl(); renderSig(); drawMap(); }
+  function renderAll() { proj = null; compute(); renderSummary(); renderRen(); if (ofp) renderWindCtl(); drawMap(); }
   renderAll();
 })();
 </script>
