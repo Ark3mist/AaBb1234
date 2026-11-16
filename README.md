@@ -15,6 +15,18 @@ One `index.html` (all CSS and app code inline) plus `perf.js` (chart data and ca
 - Bundled data: `airports.js` (airportsdata, MIT), `world50.js` (Natural Earth), `wmm.js` (WMM2025, valid to 2030),
   `vendor/pdfjs` (Apache 2.0).
 
+## SIGMET layer (CRZ map)
+**Show SIGMET** draws the current international SIGMETs from aviationweather.gov on the map, lists those near the
+route (tap one for the full text, which also highlights it), and flags those that cross the route or cover an
+alternate. **Update SIGMET** reloads the feed; a prompt appears when there is no data or it is more than 30 minutes old.
+Only the area is drawn: for a SIGMET given as a line, read the text.
+
+aviationweather.gov sends no CORS header, so a web page cannot read it directly (checked 16 Nov 2026). The app reads a
+relay instead. The feed address defaults to `raw.githubusercontent.com/Ark3mist/EDTO-CRZ-APP/sigmet-data/sigmet.json`
+and can be changed under Settings > SIGMET feed. It accepts either the raw `isigmet?format=json` array or
+`{ "generatedAt": <ms>, "records": [...] }`. The age shown is the age of the relay's copy, not of the last tap.
+**Until a relay is publishing to that address, the layer shows "not published yet".**
+
 ## REF tab
 Short reference: EDTO terms, diversion strategies, the renomination steps and both critical fuel checks,
 summarised from the MAS "EDTO Basics & Procedures" handout.
