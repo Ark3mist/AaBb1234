@@ -1,6 +1,6 @@
 # EDTO CRZ
 
-Offline web app for B737 engine-inop EDTO calculations. Bottom tabs: **CRZ | EDTO | REF**.
+Offline web app for B737 engine-inop EDTO calculations. Bottom tabs: **CRZ | EDTO | REF | OMA**.
 
 One `index.html` (all CSS and app code inline) plus `perf.js` (chart data and calculations) and
 `crz.js` (OFP parser, WGS84 route geometry, renomination maths). No build step. Hosted from the repo root on GitHub Pages.
@@ -18,6 +18,10 @@ One `index.html` (all CSS and app code inline) plus `perf.js` (chart data and ca
 ## REF tab
 Short reference: EDTO terms, diversion strategies, the renomination steps and both critical fuel checks,
 summarised from the MAS "EDTO Basics & Procedures" handout.
+
+## OMA tab
+OM-A (Rev 10.3.0, 10 Mar 2026) EDTO policy in flight order: airports and minima, period of suitability,
+fuel, crew preparation, before the EEP, and inside the EDTO segment. Paragraph numbers are shown.
 
 ## EDTO tab
 - **Altitude capability:** ZFW, fuel on board, current UTC, ETA ETP, burn rate, ISA, anti-ice →

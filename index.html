@@ -45,7 +45,7 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .updbadge{font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:2px 9px;cursor:pointer;border:0}
 .iconbtn{width:36px;height:36px;padding:0;display:grid;place-items:center;border-radius:999px;color:var(--muted)}
 .iconbtn svg{width:20px;height:20px}
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
 .tabbar button{border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;font-size:11px;font-weight:600;letter-spacing:.06em;border-radius:10px}
 .tabbar svg{width:24px;height:24px}
 .tabbar button[aria-current=page]{color:var(--accent);background:var(--soft)}
@@ -171,6 +171,13 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 .ptsbox{margin-top:10px}
 .ptsbox h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .ptsbox td.pos{font-weight:700;color:var(--accent)}
+.omref{display:inline-block;font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap;vertical-align:1px}
+h2>.phase{display:inline-grid;place-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:700;letter-spacing:0;margin-right:8px;flex:none}
+h2:has(.phase){justify-content:flex-start;gap:0}
+.pts{margin:10px 0 0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.45}
+[data-view=oma] td,[data-view=oma] th{white-space:normal;vertical-align:top}
+[data-view=oma] td.mono{white-space:nowrap}
+@media (max-width:360px){.tabbar button{font-size:10px;letter-spacing:.02em}}
 </style>
 </head>
 <body>
@@ -190,7 +197,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
       <dd><div class="seg" id="themeSeg" role="radiogroup" aria-label="Appearance"><button type="button" data-theme="device" role="radio">Device</button><button type="button" data-theme="light" role="radio">Light</button><button type="button" data-theme="dark" role="radio">Dark</button></div></dd>
       <dt>Version</dt><dd id="verTxt" class="mono"></dd>
       <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span id="updMsg" class="s"></span></dd>
-      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · MAS EDTO handout Table 1-1</dd>
+      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · OM-A Table 8.5.6.6(1), Rev 10.3.0</dd>
       <dt>Credits</dt><dd class="s">PDF.js (Apache 2.0) · airportsdata (MIT) · Natural Earth land outlines · World Magnetic Model 2025</dd>
     </dl>
   </dialog>
@@ -409,13 +416,142 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
         <li><div>QRH Ops Info: engine inoperative 310 KIAS critical fuel reserves.</div></li>
         <li><div>Weight at the new ETP = ZFW + (fuel on board − fuel to burn to the ETP), or from the OFP.</div></li>
         <li><div>Enter with the distance from ETP to the alternate and the wind. Apply the ISA and icing corrections.</div></li>
-        <li><div>Fuel on board at the ETP must be <b>equal to or more than</b> the critical fuel.</div></li>
+        <li><div>Compare fuel on board at the ETP with the critical fuel. The handout asks for equal or more.</div></li>
         <li><div>If it is less, make sure arrival fuel is above minimum diversion fuel (MDF).</div></li>
       </ol>
+      <div class="note"><b>OM-A 8.5.9.8:</b> there is no EDTO rule that you must reach the critical point with fuel at or above the critical fuel, and no diversion is required for that alone. Normal fuel policy applies. See the OMA tab.</div>
       <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Weight at ETP</button><button type="button" data-goto="edto" data-open="cf">Critical fuel chart</button></div>
     </section>
 
     <div class="hint" style="text-align:center">Summary of “EDTO Basics &amp; Procedures, B737-800” (FMC works, 2018) and the MAS EDTO handout (2025). A memory aid only: the current OM-A, OM-B and FCOM govern.</div>
+  </div>
+
+  <div class="view" data-view="oma" hidden>
+    <section>
+      <h2>OM-A · EDTO at a glance</h2>
+      <p class="refp">What OM-A Part A says about an EDTO flight, in the order you meet it: planning, preparation, before the entry point, and inside the EDTO segment. B737-800 / -8.</p>
+      <dl class="kv">
+        <dt>Threshold</dt><dd><b class="mono">60 min</b> from an adequate airport, one engine out, still air, ISA <span class="omref">8.5.6.3</span></dd>
+        <dt>Approval</dt><dd><b class="mono">120 min</b> maximum diversion time <span class="omref">8.5.5</span></dd>
+        <dt>Speed</dt><dd><b class="mono">M0.79 / 310 kt</b> at 75,000 / 79,000 kg <span class="omref">8.5.6.6</span></dd>
+      </dl>
+      <div class="tablewrap" style="margin-top:10px"><table>
+        <thead><tr><th>Diversion time</th><th>60</th><th>90</th><th>120</th><th>180 min</th></tr></thead>
+        <tbody><tr><td>Max distance</td><td class="mono">420</td><td class="mono">620</td><td class="mono"><b>820</b></td><td class="mono">1200 NM</td></tr></tbody>
+      </table></div>
+      <div class="hint">The maximum diversion time can never exceed the cargo fire suppression time in the FCOM. <span class="omref">8.5.6.6</span></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">1</span> Planning · the airports</h2>
+      <dl class="terms">
+        <dt>Adequate <span class="omref">8.5.6.2</span></dt><dd>Landing performance is met at the expected weight, and at the time of use the airport is open with ATC or CTAF, navaids, weather reporting, lighting, emergency services, at least one let-down aid (ILS, VOR/DME, VOR or NDB), and fire cover equal to RFFS category 4 (30 minutes notice is acceptable for an EDTO alternate).</dd>
+        <dt>Suitable <span class="omref">8.5.8.3</span></dt><dd>An adequate airport whose forecast meets the EDTO planning minima for the whole period of suitability.</dd>
+      </dl>
+      <div class="tablewrap" style="margin-top:10px"><table>
+        <thead><tr><th>Approach</th><th>Ceiling</th><th>Visibility</th></tr></thead>
+        <tbody>
+          <tr><td>Precision</td><td class="mono">DA(H) + 200 ft</td><td class="mono">+ 800 m</td></tr>
+          <tr><td>Non-precision<br>or circling</td><td class="mono">MDA(H) + 400 ft</td><td class="mono">+ 1500 m (1 sm)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="hint">EDTO weather planning minima. <span class="omref">8.5.8.2</span></div>
+      <ul class="pts">
+        <li><b>B737 cannot use CAT II / III</b> alternate minima: no autoland with one engine out.</li>
+        <li>Wind plus gust must be within limits, including the crosswind limit, and the runway condition forecast counts.</li>
+        <li>A <b>PROB40 or TEMPO</b> below minima must be taken into account. Probabilities below 30% are ignored. <span class="omref">8.5.8.7</span></li>
+        <li>MEL items that raise approach minima also raise the EDTO alternate minima.</li>
+        <li>Departure and destination need not meet EDTO alternate minima unless they are also used as EDTO alternates.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="phase">2</span> Planning · period of suitability</h2>
+      <p class="refp">The forecast must stay at or above EDTO minima from <b>1 hour before the earliest ETA</b> to <b>1 hour after the latest ETA</b> at each EDTO alternate. The OFP prints the period (“ENRTE ALTNS, weather suitability period”). <span class="omref">8.5.8.3</span></p>
+      <dl class="terms">
+        <dt>Earliest ETA</dt><dd>Two-engine diversion from the first ETP for that airport, at normal cruise level and speed.</dd>
+        <dt>Latest ETA</dt><dd>Two-engine diversion from the second ETP for that airport, at FL100 or MORA, at LRC (depressurised only).</dd>
+      </dl>
+      <div class="note"><b>Delay over 1 hour:</b> the period must be worked out again and checked against the forecast.</div>
+      <p class="refp" style="margin-top:10px"><b>Hybrid EDTO:</b> if only one alternate of the pair is suitable (the other adequate but below minima), the segment may be planned on that one airport, provided its maximum diversion distance covers the whole EDTO segment. <span class="omref">8.5.8.3</span></p>
+    </section>
+
+    <section>
+      <h2><span class="phase">3</span> Planning · fuel</h2>
+      <p class="refp">The area of operation is still air and ISA. <b>Fuel is not:</b> it uses the forecast wind and temperature, for a failure at the <b>critical point (CP)</b>. On the OFP the CP may appear as the ETP between two EDTO alternates. <span class="omref">8.5.8.5</span></p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Scenario at the CP</th><th>Profile</th></tr></thead>
+        <tbody>
+          <tr><td>Engine failure only</td><td>Never fuel critical (higher levels). Not normally computed.</td></tr>
+          <tr><td>Depressurisation,<br>two engines</td><td>Emergency descent to FL100 or MORA, cruise at <b>LRC</b>.</td></tr>
+          <tr><td>Engine failure +<br>depressurisation</td><td>Emergency descent to FL100 or MORA, cruise at the <b>EDTO speed</b> (310 kt).</td></tr>
+        </tbody>
+      </table></div>
+      <p class="refp" style="margin-top:10px">The critical fuel is the higher of the last two. It includes: <span class="omref">8.1.7.7</span></p>
+      <ul class="pts">
+        <li>Burn from the CP to the alternate in the worst case</li>
+        <li>5% of that burn as contingency</li>
+        <li>5% fuel mileage penalty, or the demonstrated performance factor</li>
+        <li>15 minutes holding at 1,500 ft over the alternate</li>
+        <li>An approach, a go-around and a second approach</li>
+        <li>Any MEL / CDL effect, and APU burn if it is needed as a power source</li>
+        <li>If icing is forecast (OAT below −9 °C at the CP or the alternate): engine and wing anti-ice, and ice on unheated surfaces <span class="omref">8.5.8.8</span></li>
+      </ul>
+      <div class="hint">If the EDTO plan needs more than the standard plan, the extra shows as EDTO / ADDNL in the OFP fuel summary.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">4</span> Crew preparation</h2>
+      <ol class="steps">
+        <li><div>Check the required EDTO alternates. Confirm each is <b>adequate</b> from NOTAMs and SNOWTAMs.</div></li>
+        <li><div>Check each alternate’s <b>period of validity</b> on the OFP, and that the forecast ceiling and visibility are above EDTO minima for that period.</div></li>
+        <li><div>Check the OFP critical fuel. <b>Minimum sector fuel is the higher of the EDTO fuel plan and the standard fuel plan.</b></div></li>
+        <li><div>If any of these is not met: a new OFP, new EDTO alternates and new calculations are required.</div></li>
+        <li><div><b>Technical log:</b> no open defect affecting EDTO status. Check the MEL for EDTO limits (“for ER operations” / “except for ER operations”). An aircraft that cannot comply is placarded <b>NON-EDTO</b>. <span class="omref">8.5.7</span></div></li>
+        <li><div>Cockpit preparation and EDTO system checks per OM-B. After start, cross-check fuel on board before take-off.</div></li>
+      </ol>
+      <div class="note"><b>ATC clearances.</b> The PIC must not accept a clearance that takes the aircraft outside the approved EDTO envelope, in distance or flight level. <span class="omref">8.5.9.1</span></div>
+      <div class="hint">Briefing folder for an EDTO flight: OFP with EEP / ETP / EXP and fuel plans, weather for the route and all EDTO alternates, NOTAMs for all en-route alternates. <span class="omref">8.5.8.12</span></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">5</span> Before the entry point (EEP)</h2>
+      <ol class="steps">
+        <li><div>Get a <b>weather update</b> for the declared EDTO alternates (METAR, TAF, SIGMET, SPECI), with dispatch or by your own means, plus any new NOTAM or SNOWTAM.</div></li>
+        <li><div>Weather at the ETA at each alternate must be above <b>company or crew minima</b>.</div></li>
+        <li><div>If an alternate is below those minima or not available: <b>reassess the area of operation</b> on the remaining suitable airports, and consider a re-route or turn-back.</div></li>
+        <li><div>The PIC confirms the decision: continue, re-route or turn back.</div></li>
+      </ol>
+      <div class="note"><b>Airborne, the EDTO dispatch minima no longer apply.</b> The test before the EEP is normal company or crew landing minima, not the +200 ft / +400 ft planning minima. <span class="omref">8.5.9.6</span></div>
+      <div class="btnrow"><button type="button" data-goto="crz">Renominate on the CRZ tab</button><button type="button" data-goto="ref">FMC steps (REF)</button></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">6</span> In the EDTO segment</h2>
+      <dl class="terms">
+        <dt>Weather <span class="omref">8.5.9.6</span></dt><dd>Keep updating the en-route alternates’ weather. <b>After the EEP there is no requirement to change the flight if the weather drops below minima.</b></dd>
+        <dt>Fuel <span class="omref">8.5.9.8</span></dt><dd>Normal company fuel monitoring applies. <b>There is no EDTO rule that you must reach the CP with fuel on board at or above the OFP critical fuel.</b> The CP is not a reclearance point. If the estimate at the CP is lower, no diversion is required as long as estimated fuel at destination covers the diversion to the destination alternate. Minimise consumption.</dd>
+        <dt>Critical fuel in flight</dt><dd>Base it on actual conditions. The OFP figure may include an icing reserve that is not needed if no icing is forecast.</dd>
+        <dt>ETP on the OFP <span class="omref">8.5.8.4</span></dt><dd>It may not show equal times to the two airports, because the OFP’s critical scenario is usually depressurisation, not engine failure alone.</dd>
+      </dl>
+      <p class="refp" style="margin-top:12px"><b>When to consider a re-route or diversion</b> <span class="omref">8.5.10.1</span></p>
+      <ul class="pts">
+        <li>An alternate falls below company or crew minima, or becomes unsuitable, <b>before the EEP</b></li>
+        <li>Loss of the required RNP capability before entering the area</li>
+        <li>A failure that requires landing at the nearest en-route alternate</li>
+        <li>A failure that increases fuel burn beyond the reserves available</li>
+      </ul>
+      <p class="refp" style="margin-top:12px"><b>Diversion strategy</b> <span class="omref">8.5.10.3</span></p>
+      <dl class="terms">
+        <dt>Fixed speed</dt><dd>The speed the area of operation is built on. <b>Expected after an engine failure, in-flight fire or other warning</b>, when fuel is not critical.</dd>
+        <dt>Standard (LRC)</dt><dd>Near minimum fuel burn. Use when fuel is critical.</dd>
+        <dt>Obstacle</dt><dd>Best height keeping at very low speed, where terrain or a height restriction exists.</dd>
+      </dl>
+      <div class="note"><b>PIC authority.</b> The PIC may choose or deviate from any strategy and speed after assessing the situation, <b>even if the diversion then takes longer than the approved diversion time</b>. Watch the fuel when deviating from the planned speed. <span class="omref">8.5.10.4</span></div>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Altitude capability</button><button type="button" data-goto="edto" data-open="cf">Critical fuel</button></div>
+    </section>
+
+    <div class="hint" style="text-align:center">Summary of MAB OM-A Revision 10.3.0 (10 Mar 2026): 8.1.7.7, 8.5 and 8.10.14.2. Paragraph numbers are shown so you can check the source. A memory aid only: the controlled OM-A governs.</div>
   </div>
 
   <div class="brand">EDTO CRZ · reference tool, check against your approved data</div>
@@ -425,6 +561,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
   <button type="button" data-tab="crz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>CRZ</span></button>
   <button type="button" data-tab="edto"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>EDTO</span></button>
   <button type="button" data-tab="ref"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4M8 7h7M8 11h5"/></svg><span>REF</span></button>
+  <button type="button" data-tab="oma"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg><span>OMA</span></button>
 </nav>
 
 <script src="perf.js"></script>
@@ -532,7 +669,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
   syncFields(); calc();
 
   // ---------- tabs (bottom bar) ----------
-  const TABS = { crz: "CRZ", edto: "EDTO", ref: "REF" };
+  const TABS = { crz: "CRZ", edto: "EDTO", ref: "REF", oma: "OMA" };
   const tabScroll = {};
   let curTab = null;
   function showTab(name){
@@ -568,7 +705,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-07-26";
+  const APP_VERSION = "1-08-26";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -620,8 +757,8 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
   const hmm = (min) => Math.floor(min / 60) + ":" + pad(Math.round(min) % 60);
   const minTxt = (min) => (min >= 60 ? hmm(min) + " h" : Math.round(min) + " min");
   const num = (v) => (v === "" || v == null ? NaN : Number(v));
-  // Maximum diversion distance, still air ISA, M0.79/310 kt at 75,000 kg (MAS EDTO handout, Table 1-1)
-  const DIV_NM = { 60: 420, 120: 820, 180: 1230 };
+  // Maximum diversion distance, still air ISA, M0.79/310 kt at 75,000 / 79,000 kg (OM-A Table 8.5.6.6(1), Rev 10.3.0)
+  const DIV_NM = { 60: 420, 90: 620, 120: 820, 180: 1200 };
 
   // ---------- airports ----------
   let aptIndex = null;
