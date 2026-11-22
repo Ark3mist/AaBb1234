@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EDTO CRZ</title>
-<meta name="description" content="B737 EDTO tools: OFP import with route map and alternate renomination, ETP weight, altitude capability and critical fuel, offline.">
+<meta name="description" content="B737 EDTO tools: OFP import with route map and alternate re-nomination, ETP weight, altitude capability and critical fuel, offline.">
 <meta name="theme-color" content="#0f1720">
 <script>try{var t=JSON.parse(localStorage.getItem("edto.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,7 +56,9 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .tabbar button[aria-current=page]{color:var(--accent);background:var(--soft)}
 .tabbar button[aria-current=page] svg{transform:scale(1.08)}
 section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
-h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-ink);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--h-rule);display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2{position:relative;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;line-height:1.3;color:var(--h-ink);margin:0 0 12px;padding:0 0 9px 12px;border-bottom:1px solid var(--h-rule);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px}
+h2::before{content:"";position:absolute;left:0;top:1px;height:18px;width:4px;border-radius:2px;background:var(--accent)}
+h2>.t{display:block;flex:1 1 11em;min-width:0;text-transform:inherit;letter-spacing:inherit}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
 input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
@@ -170,7 +172,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 .steps{list-style:none;margin:10px 0 0;padding:0;counter-reset:st;display:grid;gap:10px}
 .steps>li{counter-increment:st;display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:14px;line-height:1.45}
 .steps>li::before{content:counter(st);width:24px;height:24px;border-radius:50%;background:#10B981;color:#090D10;font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
-.steps h4{margin:14px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-ink);grid-column:1/-1}
+.steps h4{grid-column:1/-1}
 .steps>li.h{display:block;counter-increment:none} .steps>li.h::before{display:none}
 .key{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.95em;font-weight:600;line-height:1.25;color:#38BDF8;background:#1E293B;border:1px solid #475569;border-radius:5px;padding:2px 6px;white-space:nowrap;max-width:100%}
 .key.wide{white-space:normal;overflow-wrap:anywhere}
@@ -188,18 +190,19 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600
 .terms dt{font-weight:700;font-size:14px}
 .terms dd{margin:2px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
 .ptsbox{margin-top:10px}
-.ptsbox h4{margin:0 0 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--h-ink)}
+
 .ptsbox td.pos{font-weight:700;color:var(--accent)}
-.omref{display:inline-block;font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap;vertical-align:1px}
-h2>.phase{display:inline-grid;place-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#10B981;color:#090D10;font-size:12px;font-weight:700;letter-spacing:0;margin-right:8px;flex:none}
-h2:has(.phase){justify-content:flex-start;gap:0}
+.omref{display:inline-block;font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;white-space:nowrap;vertical-align:1px}
+h2>.phase{display:inline-grid;place-items:center;justify-content:center;align-content:center;flex:none;width:26px;height:26px;border-radius:7px;border:2px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:800;letter-spacing:0;margin-right:2px}
+h2:has(.phase){justify-content:flex-start;padding-left:0}
+h2:has(.phase)::before{display:none}
 .pts{margin:10px 0 0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.45}
 [data-view=oma] td,[data-view=oma] th{white-space:normal;vertical-align:top}
 [data-view=oma] td.mono{white-space:nowrap}
 @media (max-width:360px){.tabbar button{font-size:10px;letter-spacing:.02em}}
 .qt td,.qt th{white-space:normal;vertical-align:top}
 .qt td.mono{white-space:nowrap}
-.qh{margin:14px 0 6px;font-size:13px;font-weight:700;color:var(--h-ink)}
+
 table.cht{font-size:12px}
 table.cht th,table.cht td{text-align:right;white-space:nowrap;padding:6px 4px}
 table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{text-align:left;padding-left:2px}
@@ -211,6 +214,17 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
 @media (min-width:600px){.swipe{display:none}}
 .qd{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
 .qd summary{font-size:13px;font-weight:700;color:var(--h-ink);padding:4px 0}
+/* one style for every sub-header inside a section */
+.steps h4,.ptsbox h4,.qh{margin:16px 0 8px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+.ptsbox h4{margin-top:0}
+/* source chip on the right of a header */
+.src{display:inline-block;flex:none;margin-left:auto;font:600 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px;white-space:nowrap;letter-spacing:0;text-transform:none}
+h2>.src{display:inline-block}
+/* tab header: same block at the top of every tab */
+.vhead{padding:2px 2px 0}
+.vhead .vt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;line-height:1.2;color:var(--ink)}
+.vhead .vt .src{margin-left:0}
+.vhead .vs{margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -237,8 +251,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
 
   <!-- ================= CRZ ================= -->
   <div class="view" data-view="crz" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">Cruise<span class="src">OFP</span></div><p class="vs">Import the OFP, see the route and the 60 minute rings, and re-nominate EDTO alternates.</p></header>
     <section id="fpSec">
-      <h2>Flight plan <span><button class="ofpbtn" id="ofpPick" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="ofpPasteBtn" type="button">Paste text</button> <button class="link danger" id="ofpClear" type="button" hidden>Clear</button></span></h2>
+      <h2><span class="t">Flight plan</span> <span><button class="ofpbtn" id="ofpPick" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="ofpPasteBtn" type="button">Paste text</button> <button class="link danger" id="ofpClear" type="button" hidden>Clear</button></span></h2>
       <input type="file" id="ofpFile" accept="application/pdf,.pdf,text/plain,.txt" hidden>
       <div id="ofpPaste" hidden>
         <textarea id="ofpText" rows="6" placeholder="Paste the OFP text here" spellcheck="false"></textarea>
@@ -250,7 +265,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section id="mapSec" hidden>
-      <h2>Map <span class="s" id="mapSub"></span></h2>
+      <h2><span class="t">Map</span> <span class="s" id="mapSub"></span></h2>
       <div class="mapwrap">
         <svg id="map" role="img" aria-label="Route map with 60 minute rings around the EDTO alternates"></svg>
         <div class="zoomctl"><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zOut" aria-label="Zoom out">−</button><button type="button" id="zFit" aria-label="Fit route" title="Fit route">⤢</button></div>
@@ -263,7 +278,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section id="renSec" hidden>
-      <h2>Renominate EDTO alternates <span><button class="link" id="renReset" type="button">Reset to OFP</button></span></h2>
+      <h2><span class="t">Re-nominate EDTO alternates</span> <span><button class="link" id="renReset" type="button">Reset to OFP</button></span></h2>
       <div class="r2">
         <div><label for="ea1">En-route alternate 1</label><input id="ea1" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO"><div class="aptname" id="ea1Name"></div></div>
         <div><label for="ea2">En-route alternate 2</label><input id="ea2" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO"><div class="aptname" id="ea2Name"></div></div>
@@ -272,7 +287,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section id="edtoPtSec" hidden>
-      <h2>EDTO points in the OFP</h2>
+      <h2><span class="t">EDTO points in the OFP</span></h2>
       <div class="tablewrap"><table id="edtoPtTbl"></table></div>
       <div class="hint" id="edtoPtHint"></div>
     </section>
@@ -286,8 +301,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
 
   <!-- ================= EDTO ================= -->
   <div class="view" data-view="edto" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">EDTO calculator<span class="src">QRH OI.4.6–4.7</span></div><p class="vs">Weight at the ETP, engine-inop altitude capability and critical fuel. B737-800.</p></header>
     <section>
-      <h2>Aircraft</h2>
+      <h2><span class="t">Aircraft</span></h2>
       <div class="seg full" id="variantSeg" role="radiogroup" aria-label="Aircraft variant">
         <button type="button" role="radio" data-v="737-800">737-800</button><button type="button" role="radio" data-v="737-8">737-8</button>
       </div>
@@ -300,7 +316,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
 
     <!-- ---------- Altitude capability ---------- -->
     <section data-calc="alt">
-      <h2>Weight</h2>
+      <h2><span class="t">Weight</span></h2>
       <div class="r2">
         <div><label for="zfw">ZFW kg</label><input id="zfw" data-k="zfw" class="mono" type="number" inputmode="numeric" step="100" min="0" placeholder="62000"></div>
         <div><label for="fob">Fuel on board kg</label><input id="fob" data-k="fob" class="mono" type="number" inputmode="numeric" step="100" min="0" placeholder="14000"></div>
@@ -308,7 +324,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section data-calc="alt">
-      <h2>Fuel to burn to ETP</h2>
+      <h2><span class="t">Fuel to burn to ETP</span></h2>
       <div class="r3">
         <div><label for="nowUtc">Current UTC</label><div class="inbtn"><input id="nowUtc" data-k="nowUtc" class="mono" inputmode="numeric" placeholder="1200" maxlength="5" autocomplete="off"><button type="button" id="nowBtn">Now</button></div></div>
         <div><label for="etaUtc">ETA ETP UTC</label><input id="etaUtc" data-k="etaUtc" class="mono" inputmode="numeric" placeholder="1330" maxlength="5" autocomplete="off"></div>
@@ -317,14 +333,14 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section data-calc="alt">
-      <h2>Conditions</h2>
+      <h2><span class="t">Conditions</span></h2>
       <div class="r2">
         <div><label for="isa">ISA deviation °C</label><input id="isa" data-k="isa" class="mono" type="number" inputmode="decimal" step="1" placeholder="0"></div>
       </div>
     </section>
 
     <section data-calc="alt" aria-live="polite">
-      <h2>Weight at ETP</h2>
+      <h2><span class="t">Result · weight at ETP</span></h2>
       <div class="big"><dl class="res">
         <dt>Gross weight at ETP</dt><dd id="rGw">—</dd>
       </dl></div>
@@ -337,7 +353,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section data-calc="alt" aria-live="polite">
-      <h2>Engine inoperative altitude at point</h2>
+      <h2><span class="t">Result · engine-inop altitude</span> <span class="src">OI.4.6</span></h2>
       <div class="altgrid">
         <div class="altcard lrc">
           <h3>Long Range Cruise<small>Standard strategy</small></h3>
@@ -358,7 +374,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
 
     <!-- ---------- Critical fuel ---------- -->
     <section data-calc="cf" hidden>
-      <h2>Inputs</h2>
+      <h2><span class="t">Critical fuel · inputs</span></h2>
       <div class="r2">
         <div><label for="dist">Distance ETP → alt NM</label><input id="dist" data-k="dist" class="mono" type="number" inputmode="numeric" step="10" min="0" placeholder="900"></div>
         <div><label for="cpw">Weight at CP kg</label><div class="inbtn"><input id="cpw" data-k="cpw" class="mono" type="number" inputmode="numeric" step="100" min="0"><button type="button" id="gwBtn" disabled>ETP GW</button></div></div>
@@ -371,7 +387,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section data-calc="cf" hidden aria-live="polite">
-      <h2>Result</h2>
+      <h2><span class="t">Result · critical fuel</span> <span class="src">OI.4.7</span></h2>
       <div class="big"><dl class="res"><dt>Critical fuel · engine inop</dt><dd id="cTotal">—</dd></dl></div>
       <dl class="res">
         <dt>Nil-wind fuel</dt><dd id="cNil">—</dd>
@@ -386,8 +402,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
 
   <!-- ================= APP ================= -->
   <div class="view" data-view="ref" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">Reference<span class="src">Handout</span></div><p class="vs">EDTO terms, diversion strategies, the re-nomination steps and the critical fuel checks.</p></header>
     <section>
-      <h2>EDTO in brief</h2>
+      <h2><span class="t">EDTO in brief</span> <span class="src">OM-A 8.5.6</span></h2>
       <p class="refp"><b>EDTO</b> (Extended Diversion Time Operations) is flight beyond <b>60 minutes</b> from an adequate en-route alternate, inside the approved maximum diversion time. For the MAS B737-800 that is <b>120 minutes</b>.</p>
       <dl class="kv">
         <dt>60 min</dt><dd><span class="mono">420 NM</span></dd>
@@ -398,7 +415,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Terms</h2>
+      <h2><span class="t">Terms</span></h2>
       <dl class="terms">
         <dt>Maximum diversion time</dt><dd>120, 180 or 207 min as approved. It sizes the area of operation only. It is not a time limit on an actual diversion.</dd>
         <dt>Maximum diversion distance</dt><dd>Distance covered in that time, still air and ISA, at the one-engine-out speed schedule, including the descent to diversion altitude.</dd>
@@ -411,7 +428,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Diversion strategies</h2>
+      <h2><span class="t">Diversion strategies</span> <span class="src">OM-A 8.5.10.3</span></h2>
       <dl class="terms">
         <dt>Standard</dt><dd>M0.79 / 280 kt, LRC ceiling. Use when fuel is critical.</dd>
         <dt>Fixed speed</dt><dd>M0.79 / 310 kt. The speed the EDTO area and the critical fuel chart are based on.</dd>
@@ -420,7 +437,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Alternate renomination</h2>
+      <h2><span class="t">Re-nominating an alternate</span></h2>
       <p class="refp">Needed when an en-route alternate becomes unsuitable after departure (weather, NOTAM, closure). Pick the new airport from the EDTO area of operations chart, then use the FMC. <b>Never press EXEC</b> during this work.</p>
       <ol class="steps">
         <li><div><b>Suitability.</b> Check latest weather and NOTAMs for the new alternates (ACARS if available).</div></li>
@@ -450,7 +467,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Critical fuel check · FMC</h2>
+      <h2><span class="t">Critical fuel check · FMC</span></h2>
       <p class="refp">A quick cross-check of fuel on arrival at the alternate from the ETP, depressurised. <span class="caution">PROGRESS is next to EXEC: go slowly.</span></p>
       <ol class="steps">
         <li><div><b>RTE</b> page 1: enter the alternate as DEST. <span class="caution">Do not execute.</span></div></li>
@@ -464,7 +481,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Critical fuel check · chart</h2>
+      <h2><span class="t">Critical fuel check · chart</span></h2>
       <ol class="steps">
         <li><div>QRH Ops Info: engine inoperative 310 KIAS critical fuel reserves.</div></li>
         <li><div>Weight at the new ETP = ZFW + (fuel on board − fuel to burn to the ETP), or from the OFP.</div></li>
@@ -480,8 +497,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
   </div>
 
   <div class="view" data-view="oma" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">OM-A policy<span class="src">OM-A Rev 10.3.0</span></div><p class="vs">EDTO from planning to the EDTO segment, with paragraph numbers.</p></header>
     <section>
-      <h2>OM-A · EDTO at a glance</h2>
+      <h2><span class="t">At a glance</span> <span class="src">8.5.5–8.5.6</span></h2>
       <p class="refp">What OM-A Part A says about an EDTO flight, in the order you meet it: planning, preparation, before the entry point, and inside the EDTO segment. B737-800 / -8.</p>
       <dl class="kv">
         <dt>Threshold</dt><dd><b class="mono">60 min</b> from an adequate airport, one engine out, still air, ISA <span class="omref">8.5.6.3</span></dd>
@@ -496,7 +514,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">1</span> Planning · the airports</h2>
+      <h2><span class="phase">1</span> <span class="t">Planning · the airports</span> <span class="src">8.5.6.2 · 8.5.8.2</span></h2>
       <dl class="terms">
         <dt>Adequate <span class="omref">8.5.6.2</span></dt><dd>Landing performance is met at the expected weight, and at the time of use the airport is open with ATC or CTAF, navaids, weather reporting, lighting, emergency services, at least one let-down aid (ILS, VOR/DME, VOR or NDB), and fire cover equal to RFFS category 4 (30 minutes notice is acceptable for an EDTO alternate).</dd>
         <dt>Suitable <span class="omref">8.5.8.3</span></dt><dd>An adequate airport whose forecast meets the EDTO planning minima for the whole period of suitability.</dd>
@@ -519,7 +537,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">2</span> Planning · period of suitability</h2>
+      <h2><span class="phase">2</span> <span class="t">Planning · period of suitability</span> <span class="src">8.5.8.3</span></h2>
       <p class="refp">The forecast must stay at or above EDTO minima from <b>1 hour before the earliest ETA</b> to <b>1 hour after the latest ETA</b> at each EDTO alternate. The OFP prints the period (“ENRTE ALTNS, weather suitability period”). <span class="omref">8.5.8.3</span></p>
       <dl class="terms">
         <dt>Earliest ETA</dt><dd>Two-engine diversion from the first ETP for that airport, at normal cruise level and speed.</dd>
@@ -530,7 +548,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">3</span> Planning · fuel</h2>
+      <h2><span class="phase">3</span> <span class="t">Planning · fuel</span> <span class="src">8.5.8.5 · 8.1.7.7</span></h2>
       <p class="refp">The area of operation is still air and ISA. <b>Fuel is not:</b> it uses the forecast wind and temperature, for a failure at the <b>critical point (CP)</b>. On the OFP the CP may appear as the ETP between two EDTO alternates. <span class="omref">8.5.8.5</span></p>
       <div class="tablewrap"><table>
         <thead><tr><th>Scenario at the CP</th><th>Profile</th></tr></thead>
@@ -554,7 +572,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">4</span> Crew preparation</h2>
+      <h2><span class="phase">4</span> <span class="t">Crew preparation</span> <span class="src">8.5.9.1</span></h2>
       <ol class="steps">
         <li><div>Check the required EDTO alternates. Confirm each is <b>adequate</b> from NOTAMs and SNOWTAMs.</div></li>
         <li><div>Check each alternate’s <b>period of validity</b> on the OFP, and that the forecast ceiling and visibility are above EDTO minima for that period.</div></li>
@@ -568,7 +586,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">5</span> Before the entry point (EEP)</h2>
+      <h2><span class="phase">5</span> <span class="t">Before the entry point (EEP)</span> <span class="src">8.5.9.6</span></h2>
       <ol class="steps">
         <li><div>Get a <b>weather update</b> for the declared EDTO alternates (METAR, TAF, SIGMET, SPECI), with dispatch or by your own means, plus any new NOTAM or SNOWTAM.</div></li>
         <li><div>Weather at the ETA at each alternate must be above <b>company or crew minima</b>.</div></li>
@@ -576,11 +594,11 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
         <li><div>The PIC confirms the decision: continue, re-route or turn back.</div></li>
       </ol>
       <div class="note"><b>Airborne, the EDTO dispatch minima no longer apply.</b> The test before the EEP is normal company or crew landing minima, not the +200 ft / +400 ft planning minima. <span class="omref">8.5.9.6</span></div>
-      <div class="btnrow"><button type="button" data-goto="crz">Renominate on the CRZ tab</button><button type="button" data-goto="ref">FMC steps (REF)</button></div>
+      <div class="btnrow"><button type="button" data-goto="crz">Re-nominate on the CRZ tab</button><button type="button" data-goto="ref">FMC steps (REF)</button></div>
     </section>
 
     <section>
-      <h2><span class="phase">6</span> In the EDTO segment</h2>
+      <h2><span class="phase">6</span> <span class="t">In the EDTO segment</span> <span class="src">8.5.9.8 · 8.5.10</span></h2>
       <dl class="terms">
         <dt>Weather <span class="omref">8.5.9.6</span></dt><dd>Keep updating the en-route alternates’ weather. <b>After the EEP there is no requirement to change the flight if the weather drops below minima.</b></dd>
         <dt>Fuel <span class="omref">8.5.9.8</span></dt><dd>Normal company fuel monitoring applies. <b>There is no EDTO rule that you must reach the CP with fuel on board at or above the OFP critical fuel.</b> The CP is not a reclearance point. If the estimate at the CP is lower, no diversion is required as long as estimated fuel at destination covers the diversion to the destination alternate. Minimise consumption.</dd>
@@ -608,8 +626,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
   </div>
 
   <div class="view" data-view="qrh" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">QRH procedures<span class="src">D6-27370-8H6-MAS</span></div><p class="vs">The EDTO pages OI.4.1 to OI.4.7 in flight order, with the charts.</p></header>
     <section>
-      <h2>QRH · EDTO pages</h2>
+      <h2><span class="t">Pages</span> <span class="src">OI.4</span></h2>
       <p class="refp">The EDTO pages of the Boeing 737 FCOM QRH (Operational Information, chapter OI, section 4; MAS issue D6-27370-8H6-MAS), in the order you use them. Page numbers are shown against each item.</p>
       <div class="tablewrap"><table class="qt">
         <thead><tr><th>Page</th><th>Content</th><th>Dated</th></tr></thead>
@@ -627,16 +646,16 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">1</span> Before departure and after airborne</h2>
+      <h2><span class="phase">1</span> <span class="t">Before departure and after airborne</span> <span class="src">OI.4.1</span></h2>
       <ul class="acts">
-        <li><b>Test the crossfeed valve.</b> Selector OPEN: the VALVE OPEN light goes bright, then dim. Selector CLOSE: bright, then out. Enter any failure in the Technical Log. <span class="omref">OI.4.1</span></li>
-        <li><b>Insert</b> the EDTO alternates into FMC FIX INFO, then <b>verify</b> them. <span class="omref">OI.4.1</span></li>
-        <li><b>Send the EDTO message</b> once airborne, to FDC by ACARS or SATCOM (or the EDTO prompt if fitted). It carries: <span class="key wide">ATD · TOW · TOF · EEP · ETP · EXP · ETA</span> <span class="omref">OI.4.1</span></li>
+        <li><b>Test the crossfeed valve.</b> Selector OPEN: the VALVE OPEN light goes bright, then dim. Selector CLOSE: bright, then out. Enter any failure in the Technical Log.</li>
+        <li><b>Insert</b> the EDTO alternates into FMC FIX INFO, then <b>verify</b> them.</li>
+        <li><b>Send the EDTO message</b> once airborne, to FDC by ACARS or SATCOM (or the EDTO prompt if fitted). It carries: <span class="key wide">ATD · TOW · TOF · EEP · ETP · EXP · ETA</span></li>
       </ul>
     </section>
 
     <section>
-      <h2><span class="phase">2</span> Before the EEP</h2>
+      <h2><span class="phase">2</span> <span class="t">Before the EEP</span> <span class="src">OI.4.1–4.2</span></h2>
       <ul class="acts">
         <li><b>Review</b> aircraft position. ANP must be better than RNP. <span class="omref">OI.4.1</span></li>
         <li><b>Check</b> aircraft status: master caution recall, and review the EDTO restrictions. EDTO critical equipment is listed in the SOM. <span class="omref">OI.4.1</span></li>
@@ -652,9 +671,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">3</span> Alternate check (flow chart)</h2>
+      <h2><span class="phase">3</span> <span class="t">Alternate check (flow chart)</span> <span class="src">OI.4.3</span></h2>
       <ol class="steps">
-        <li><div><b>Check</b> updated weather and NOTAMs for the nominated EDTO alternates, and that the airport charts are accessible. <span class="omref">OI.4.3</span></div></li>
+        <li><div><b>Check</b> updated weather and NOTAMs for the nominated EDTO alternates, and that the airport charts are accessible.</div></li>
         <li><div>If the alternates <b>satisfy the criteria</b>: brief, and continue into EDTO.</div></li>
         <li><div>If not: <b>request</b> a new alternate from FDC, or <b>re-nominate</b> manually, and <b>check fuel</b>.</div></li>
         <li><div>If the new alternates satisfy the criteria: brief, and continue into EDTO.</div></li>
@@ -664,8 +683,8 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">4</span> Re-nominating an alternate</h2>
-      <p class="refp">When a re-nomination is needed, send a downlink to FDC by ACARS, or call FDC by SATCOM. Ask for: <span class="omref">OI.4.4</span></p>
+      <h2><span class="phase">4</span> <span class="t">Re-nominating an alternate</span> <span class="src">OI.4.4</span></h2>
+      <p class="refp">When a re-nomination is needed, send a downlink to FDC by ACARS, or call FDC by SATCOM. Ask for:</p>
       <ul class="acts">
         <li>The <b>new EA</b></li>
         <li>The <b>EEP, ETP and EXP coordinates</b> and the <b>EDTO critical fuel</b></li>
@@ -676,7 +695,7 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">5</span> EDTO briefing</h2>
+      <h2><span class="phase">5</span> <span class="t">EDTO briefing</span> <span class="src">OI.4.4–4.5</span></h2>
       <ol class="steps">
         <li><div><b>Decide the diversion airport.</b> Enter the alternates in FMC FIX INFO and/or the ALTN page. FMC route 2 is recommended. <span class="omref">OI.4.4</span></div></li>
         <li><div><b>Decide the diversion routing.</b> Look at both the direct track (ALTN page) and routes via airways. Route 2 is recommended.</div></li>
@@ -696,9 +715,9 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2><span class="phase">6</span> In the EDTO segment and after the EXP</h2>
+      <h2><span class="phase">6</span> <span class="t">In the EDTO segment and after the EXP</span> <span class="src">OI.4.5</span></h2>
       <ul class="acts">
-        <li><b>Monitor</b> the status of the en-route diversion airports. <span class="omref">OI.4.5</span></li>
+        <li><b>Monitor</b> the status of the en-route diversion airports.</li>
         <li><b>Approaching each ETP,</b> review the EDTO briefing again for the next diversion airport.</li>
         <li><b>After the EXP:</b> if the APU is on, switch it <b>off</b> for the last hour of cruise.</li>
         <li><b>After the EXP:</b> test the crossfeed valve again (OPEN: light bright then dim; CLOSE: bright then out) and report any failure in the Technical Log.</li>
@@ -706,8 +725,8 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Altitude capability · OI.4.6</h2>
-      <p class="refp">Engine inoperative, B737-800, maximum continuous thrust, 100 ft/min residual rate of climb. Pressure altitude, ft. <span class="omref">OI.4.6</span></p>
+      <h2><span class="t">Altitude capability</span> <span class="src">OI.4.6</span></h2>
+      <p class="refp">Engine inoperative, B737-800, maximum continuous thrust, 100 ft/min residual rate of climb. Pressure altitude, ft.</p>
       <h3 class="qh">Long Range Cruise (standard strategy)</h3>
       <div class="tablewrap" id="qrhLrc"></div>
       <div class="hint">Engine anti-ice on: reduce by <b>1,200 ft</b>. Engine and wing anti-ice on: reduce by <b>5,500 ft</b>.</div>
@@ -725,8 +744,8 @@ table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{pos
     </section>
 
     <section>
-      <h2>Critical fuel reserves · OI.4.7</h2>
-      <p class="refp">310 KIAS cruise critical fuel reserves, engine inoperative, B737-800. <span class="omref">OI.4.7</span></p>
+      <h2><span class="t">Critical fuel reserves</span> <span class="src">OI.4.7</span></h2>
+      <p class="refp">310 KIAS cruise critical fuel reserves, engine inoperative, B737-800.</p>
       <div class="swipe">Swipe sideways for the weight columns.</div>
       <div class="tablewrap" id="qrhCf"></div>
       <div class="hint">Weights are the weight at the critical point. Fuel in 1,000 kg. Add the wind correction to the nil-wind fuel (tailwind −, headwind +). A dash means the chart gives no value.</div>
