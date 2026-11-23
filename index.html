@@ -972,7 +972,7 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
   const pad = (n, w = 2) => String(n).padStart(w, "0");
   const deg = (d) => pad(Math.round(CRZ.norm360(d)) % 360, 3) + "°";
   const nm = (d) => Math.round(d).toLocaleString("en-US") + " NM";
-  const hmm = (min) => Math.floor(min / 60) + ":" + pad(Math.round(min) % 60);
+  const hmm = (min) => { const t = Math.round(min); return Math.floor(t / 60) + ":" + pad(t % 60); };
   const minTxt = (min) => (min >= 60 ? hmm(min) + " h" : Math.round(min) + " min");
   const num = (v) => (v === "" || v == null ? NaN : Number(v));
   // Maximum diversion distance, still air ISA, M0.79/310 kt at 75,000 / 79,000 kg (OM-A Table 8.5.6.6(1), Rev 10.3.0)

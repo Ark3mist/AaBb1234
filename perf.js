@@ -118,7 +118,8 @@
   }
 
   function formatHHMM(mins) {
-    const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+    const t = Math.round(mins);
+    const h = Math.floor(t / 60), m = t % 60;
     return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
   }
 

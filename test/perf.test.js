@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { interp, parseHHMM, etpWeight, altitudeCapability, criticalFuel, B738 } = require("../perf.js");
+const { interp, parseHHMM, formatHHMM, etpWeight, altitudeCapability, criticalFuel, B738 } = require("../perf.js");
 
 const near = (a, b, tol = 1e-6) => assert.ok(Math.abs(a - b) < tol, `${a} != ${b}`);
 
@@ -18,6 +18,14 @@ test("parseHHMM", () => {
   assert.equal(parseHHMM("930"), 570);
   assert.equal(parseHHMM("2460"), null);
   assert.equal(parseHHMM(""), null);
+});
+
+test("formatHHMM: whole minutes and hour rollover on rounding", () => {
+  assert.equal(formatHHMM(0), "00:00");
+  assert.equal(formatHHMM(90), "01:30");
+  assert.equal(formatHHMM(59.4), "00:59");
+  assert.equal(formatHHMM(59.6), "01:00");
+  assert.equal(formatHHMM(119.6), "02:00");
 });
 
 test("etpWeight: basic and midnight rollover", () => {
