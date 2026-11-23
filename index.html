@@ -970,7 +970,8 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
   const { $, store, showTab, setEdto } = window.APP;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const pad = (n, w = 2) => String(n).padStart(w, "0");
-  const deg = (d) => pad(Math.round(CRZ.norm360(d)) % 360, 3) + "°";
+  const hdg = (d) => (Math.round(CRZ.norm360(d)) % 360) || 360;
+  const deg = (d) => pad(hdg(d), 3) + "°";
   const nm = (d) => Math.round(d).toLocaleString("en-US") + " NM";
   const hmm = (min) => { const t = Math.round(min); return Math.floor(t / 60) + ":" + pad(t % 60); };
   const minTxt = (min) => (min >= 60 ? hmm(min) + " h" : Math.round(min) + " min");
@@ -1196,8 +1197,9 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
     const K = (s) => `<span class="key">${esc(s)}</span>`, V = (s) => `<span class="val">${s}</span>`;
     const f1 = a2.id.slice(0, 3) + "01", f2 = a2.id.slice(0, 3) + "02", f3 = a2.id.slice(0, 3) + "03";
     const halfN = Math.round(r.half), radDist = Math.round(r.radialDist);
-    const typed = CRZ.norm360(Math.round(r.trackM) + (r.side === "right" ? 90 : -90));   // what the handout arithmetic gives
-    const exact = Math.round(r.radialM) % 360;
+    const trackM = hdg(r.trackM);
+    const typed = hdg(trackM + (r.side === "right" ? 90 : -90));   // what the handout arithmetic gives
+    const exact = hdg(r.radialM);
     const legTxt = (l) => (l.before && l.after ? `${K(l.before.name)} and ${K(l.after.name)}` : "the two waypoints either side");
     const max = maxDivNm(), rule = (ofp.edto && ofp.edto.ruleMin) || 120;
     const lvlOpts = calc.near ? calc.near.rows.slice().sort((x, y) => y.fl - x.fl).map((w) =>
@@ -1220,7 +1222,7 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
     h += `<li><div><b>LEGS</b>, last page: enter ${K(a1.id)} then ${K(a2.id)} below it. <span class="caution">Do not execute.</span> Note the track and distance from ${esc(a1.id)} to ${esc(a2.id)}: expect about ${V(deg(r.trackM))} / ${V(nm(r.trackDist))}. <span class="s">(${deg(r.trackT)} true)</span></div></li>`;
     h += `<li><div>Half the distance: ${Math.round(r.trackDist)} ÷ 2 = ${V(halfN + " NM")}. Type ${K(a2.id + "/-" + halfN)} and put it between ${esc(a1.id)} and ${esc(a2.id)}. This makes the halfway fix, named like ${K(f1)}. <span class="s">(${CRZ.fmtLatLon(r.mid)})</span></div></li>`;
     h += `<li><div>Line-select ${K(f1)} into the <b>FIX</b> page (1L), then erase ${esc(a1.id)} and ${esc(a2.id)} from LEGS.</div></li>`;
-    h += `<li><div>The route is on the <b>${r.side}</b> of the ${esc(a1.id)}→${esc(a2.id)} track, so ${r.side === "right" ? "add" : "subtract"} 90°: ${Math.round(r.trackM)} ${r.side === "right" ? "+" : "−"} 90 = ${V(pad(typed, 3) + "°")}. Enter ${K(pad(typed, 3))} on a FIX line. A dashed line appears, crossing the route about ${V(radDist + " NM")} from ${esc(f1)}.${Math.abs(((typed - exact + 540) % 360) - 180) >= 2 ? ` <span class="s">(the exact 90° line at the fix is ${pad(exact, 3)}°; the track turns slightly along a long great circle)</span>` : ""}</div></li>`;
+    h += `<li><div>The route is on the <b>${r.side}</b> of the ${esc(a1.id)}→${esc(a2.id)} track, so ${r.side === "right" ? "add" : "subtract"} 90°: ${pad(trackM, 3)} ${r.side === "right" ? "+" : "−"} 90 = ${V(pad(typed, 3) + "°")}. Enter ${K(pad(typed, 3))} on a FIX line. A dashed line appears, crossing the route about ${V(radDist + " NM")} from ${esc(f1)}.${Math.abs(((typed - exact + 540) % 360) - 180) >= 2 ? ` <span class="s">(the exact 90° line at the fix is ${pad(exact, 3)}°; the track turns slightly along a long great circle)</span>` : ""}</div></li>`;
     h += `<li><div>Line-select the radial line to copy it to the scratchpad, go to <b>LEGS</b> and put it between ${legTxt(r.edpLeg)}. This makes ${K(f2)}: the <b>EDP</b>.<div class="resbox">EDP ${V(CRZ.fmtLatLon(r.edp))}<br>${V(nm(r.edpDist1))} to each airport</div></div></li>`;
 
     h += `<li class="h"><h4>Step 3 · Equal time point (ETP)</h4></li>`;
