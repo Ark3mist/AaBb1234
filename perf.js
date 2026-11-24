@@ -5,7 +5,11 @@
   "use strict";
 
   // ---------- B737-800 ENGINE INOP data ----------
-  // Source: D6-27370-8H6-MAS, OI.4.6, October 01, 2024. Transcribed by hand.
+  // Source: D6-27370-8H6-MAS, OI.4.6 (altitude capability) and OI.4.7 (critical fuel), October 01, 2024 (EDTO, engine inop, B737-800).
+  // Checked cell by cell against the QRH text on 16 Nov 2026: 148 cells and the footnote values all match.
+  // These are the CFM56-7B26 figures. The in-flight QRH also has a CFM56-7B24 table that is much lower
+  // for LRC at high weights (about 2,700 ft lower at 68.4 t, ISA+12). The QRH text does not say which
+  // registrations each applies to: confirm with your fleet data before relying on this for a B24 aircraft.
   // "-" cells in the chart are null (no data).
   const B738 = {
     criticalFuel: {
@@ -68,6 +72,21 @@
     },
   };
 
+  // Reference only (QRH tab), not used by the calculators: the in-flight (PI) section's Engine Inoperative
+  // Long Range Cruise altitude capability for the 737-800W with CFM56-7B24 engines, dated 30 Sep 2025.
+  // Same layout as B738.altitudeCapability.lrc; the anti-ice reductions differ from the B26 chapters.
+  const B738_PI_B24 = {
+    title: "737-800W / CFM56-7B24 · Long Range Cruise altitude capability (PI section)",
+    isaAxis: [10, 15, 20],
+    weights: [40, 45, 50, 55, 60, 65, 70, 75, 80, 85],
+    alt: [
+      [33800, 31400, 29000, 26300, 23700, 21100, 18400, 15300, 12400, 9500],
+      [33000, 30500, 27700, 24700, 21800, 18600, 15800, 12800, 9500, 6400],
+      [31800, 29200, 25800, 22400, 19400, 16300, 13200, 9800, 6500, 3400],
+    ],
+    antiIce: { engine: 2000, engineWing: 6500 },
+  };
+
   // Performance data per variant. null = no chart data loaded yet.
   const VARIANTS = { "737-800": B738, "737-8": null };
 
@@ -99,7 +118,8 @@
   }
 
   function formatHHMM(mins) {
-    const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+    const t = Math.round(mins);
+    const h = Math.floor(t / 60), m = t % 60;
     return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
   }
 
@@ -156,7 +176,7 @@
     return { nilWind, windCorr, isaPct, icingPct, total };
   }
 
-  const PERF = { VARIANTS, B738, interp, parseHHMM, formatHHMM, etpWeight, altitudeCapability, criticalFuel };
+  const PERF = { VARIANTS, B738, B738_PI_B24, interp, parseHHMM, formatHHMM, etpWeight, altitudeCapability, criticalFuel };
   if (typeof module === "object" && module.exports) module.exports = PERF;
   else root.PERF = PERF;
 })(typeof self !== "undefined" ? self : this);

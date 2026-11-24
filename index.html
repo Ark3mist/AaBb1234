@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EDTO CRZ</title>
-<meta name="description" content="B737 engine-inop EDTO calculations: ETP weight, altitude capability and critical fuel, offline.">
+<meta name="description" content="B737 EDTO tools: OFP import with route map and alternate re-nomination, ETP weight, altitude capability and critical fuel, offline.">
 <meta name="theme-color" content="#0f1720">
 <script>try{var t=JSON.parse(localStorage.getItem("edto.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,14 +18,23 @@
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#111827; --muted:#5b6472; --line:#dde1e6; --field:#f8f9fb;
   --accent:#0f766e; --accent-ink:#fff; --soft:#e7f3f1; --warn:#b45309; --err:#b91c1c;
+  --h-ink:#1e293b; --h-rule:#c4e2de; --h-bg:#e4f3f1; --caution:#b45309; --act-bg:rgba(16,185,129,.12); --act-bd:#059669; --act-ink:#047857;
+  --limit-bg:#fef3c7; --limit-bd:#b45309; --limit-ink:#78350f;
+  --ocean:#cfe2ee; --land:#ece6d3; --coast:#a39a80; --grid:rgba(17,24,39,.12); --halo:#ffffff; --route:#334155; --wind:#1d4ed8;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
+  --h-ink:#e2e8f0; --h-rule:#224145; --h-bg:#142a2c; --caution:#fbbf24; --act-bg:rgba(16,185,129,.15); --act-bd:#10b981; --act-ink:#34d399;
+  --limit-bg:rgba(251,191,36,.16); --limit-bd:#fbbf24; --limit-ink:#fef3c7;
+  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1; --wind:#93c5fd;
 }}
 :root[data-theme="dark"]{
   --bg:#0b1016; --panel:#121a23; --ink:#e6e9ee; --muted:#8c97a7; --line:#243142; --field:#0e151d;
   --accent:#2dd4bf; --accent-ink:#06201d; --soft:#123330; --warn:#f59e0b; --err:#f87171;
+  --h-ink:#e2e8f0; --h-rule:#224145; --h-bg:#142a2c; --caution:#fbbf24; --act-bg:rgba(16,185,129,.15); --act-bd:#10b981; --act-ink:#34d399;
+  --limit-bg:rgba(251,191,36,.16); --limit-bd:#fbbf24; --limit-ink:#fef3c7;
+  --ocean:#12283a; --land:#2f3b2c; --coast:#5d6b56; --grid:rgba(230,233,238,.10); --halo:#0b1016; --route:#cbd5e1; --wind:#93c5fd;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -37,18 +46,19 @@ main{max-width:880px;margin:0 auto;padding:12px 16px calc(84px + env(safe-area-i
 .appbar h1{font-size:18px;margin:0}
 .tabtitle{font-weight:500;color:var(--muted);font-size:15px}
 .tabtitle:before{content:"· "}
-.byline{display:block;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:1px}
 .appbar .right{display:flex;gap:8px;align-items:center}
 .updbadge{font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:2px 9px;cursor:pointer;border:0}
 .iconbtn{width:36px;height:36px;padding:0;display:grid;place-items:center;border-radius:999px;color:var(--muted)}
 .iconbtn svg{width:20px;height:20px}
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
 .tabbar button{border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;font-size:11px;font-weight:600;letter-spacing:.06em;border-radius:10px}
 .tabbar svg{width:24px;height:24px}
 .tabbar button[aria-current=page]{color:var(--accent);background:var(--soft)}
 .tabbar button[aria-current=page] svg{transform:scale(1.08)}
 section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
-h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2{position:relative;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;line-height:1.3;color:var(--h-ink);margin:0 0 12px;padding:0 0 9px 12px;border-bottom:1px solid var(--h-rule);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px}
+h2::before{content:"";position:absolute;left:0;top:1px;height:18px;width:4px;border-radius:2px;background:var(--accent)}
+h2>.t{display:block;flex:1 1 11em;min-width:0;text-transform:inherit;letter-spacing:inherit}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input,select{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0}
 input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
@@ -87,12 +97,143 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 .setlist{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 14px;align-items:center;margin:0}
 .setlist dt{color:var(--muted);font-size:13px} .setlist dd{margin:0}
 .brand{text-align:center;color:var(--muted);font-size:12px;letter-spacing:.04em;padding:10px 0 4px}
+.altgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:340px){.altgrid{grid-template-columns:1fr}}
+.altcard{border-radius:12px;padding:12px 10px 10px;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.altcard.lrc{background:linear-gradient(135deg,#10b981,#059669)}
+.altcard.fix{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.altcard h3{margin:0 0 10px;font-size:15px;text-align:center;line-height:1.25}
+.altcard h3 small{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.85;margin-top:2px}
+.altcard .alt{background:rgba(15,23,42,.88);border-radius:8px;padding:8px 10px;margin-top:8px}
+.altcard .alt span{display:block;font-size:12px;font-weight:600}
+.altcard .alt b{display:block;font:700 20px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-top:2px;white-space:nowrap}
+.altcard.lrc .alt span{color:#6ee7b7} .altcard.lrc .alt b{color:#a7f3d0}
+.altcard.fix .alt span{color:#fca5a5} .altcard.fix .alt b{color:#fecaca}
+@media (max-width:400px){.altcard .alt b{font-size:17px}.altcard .alt{padding:7px 8px}.altcard .alt span{font-size:11px}.altgrid{gap:8px}.altcard{padding:12px 8px 8px}}
+.ofpbtn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:none}
+.ofpbtn svg{width:16px;height:16px}
+h2>span{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-content:flex-end;text-transform:none;letter-spacing:0}
+button.link.danger{color:var(--err)}
+textarea{width:100%;font:13px ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.caution{color:var(--caution);font-weight:600}
+.limit{display:inline-block;font-weight:700;color:var(--limit-ink);background:var(--limit-bg);border:1px solid var(--limit-bd);border-radius:5px;padding:0 6px;white-space:nowrap}
+button[data-goto]{padding:9px 14px;border-radius:8px;background:var(--act-bg);border:1px solid var(--act-bd);color:var(--act-ink);font-weight:600}
+button[data-goto]:active{background:rgba(16,185,129,.3)}
+.acts{list-style:disc;margin:6px 0 0;padding-left:18px;display:grid;gap:5px}
+.acts li{font-size:14px;line-height:1.45;padding-left:2px}
+.acts li::marker{color:var(--h-ink)}
+.fphead{font-size:20px;font-weight:700;margin:0 0 2px}
+.fphead small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;margin:10px 0 0;font-size:14px}
+.kv dt{color:var(--muted);font-size:13px} .kv dd{margin:0;overflow-wrap:anywhere}
+.kv dd .mono{font-weight:600}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--accent);font-weight:700;white-space:nowrap}
+.pill.warn{background:transparent;color:var(--warn);border:1px solid var(--warn)}
+.pill.bad{background:transparent;color:var(--err);border:1px solid var(--err)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td.mono,td b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+tr.ps td{color:var(--muted)}
+details>summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600}
+.mapwrap{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--ocean)}
+#map{display:block;width:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#map:active{cursor:grabbing}
+.zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px}
+.zoomctl button{width:34px;height:34px;padding:0;font-size:17px;font-weight:700;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+#map .land{fill:var(--land);stroke:var(--coast);stroke-width:.6}
+#map .grat{stroke:var(--grid);stroke-width:1;fill:none}
+#map .gl{font-size:9px;fill:var(--muted)}
+#map .rte{stroke:var(--route);stroke-width:2;fill:none;stroke-linejoin:round}
+#map .seg{stroke:var(--err);stroke-width:4;fill:none;stroke-linecap:round;opacity:.85}
+#map .wp{fill:var(--panel);stroke:var(--route);stroke-width:1.5}
+#map .ring{fill:var(--accent);fill-opacity:.10;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:6 4}
+#map .apt{fill:var(--accent);stroke:var(--halo);stroke-width:1.5}
+#map .ring.era{fill-opacity:.04;stroke-opacity:.28;stroke-width:1.1;stroke-dasharray:3 5}
+#map .apt.era{fill-opacity:.4;stroke-opacity:.6}
+#map text.e{fill:var(--accent);fill-opacity:.6;font-weight:500}
+#map .end{fill:var(--route);stroke:var(--halo);stroke-width:1.5}
+#map .trk{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
+#map .barb{stroke:var(--wind);stroke-width:1.6;fill:var(--wind);stroke-linecap:round;stroke-linejoin:round}
+#map .barb.calm{fill:none}
+#map text.w{fill:var(--wind);font:600 10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mapctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px}
+.mapctl .chk{margin:0}
+.mapctl select{width:auto;min-width:150px}
+#map .bis{stroke:#16a34a;stroke-width:1.8;stroke-dasharray:7 5;fill:none}
+#map .eqring{stroke:#16a34a;stroke-width:1.3;stroke-opacity:.6;stroke-dasharray:4 4;fill:none}
+#map .pt{stroke:var(--halo);stroke-width:1.5}
+#map .pt.edp{fill:#16a34a} #map .pt.etp{fill:var(--err)} #map .pt.ee{fill:var(--warn)} #map .pt.ofp{fill:none;stroke:var(--muted);stroke-width:1.5}
+#map text{font:600 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:3px;stroke-linejoin:round}
+#map text.k{fill:var(--accent)} #map text.r{fill:var(--err)} #map text.g{fill:#16a34a} #map text.m{fill:var(--muted);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.steps{list-style:none;margin:10px 0 0;padding:0;counter-reset:st;display:grid;gap:10px}
+.steps>li{counter-increment:st;display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:14px;line-height:1.45}
+.steps>li::before{content:counter(st);width:24px;height:24px;border-radius:50%;background:#10B981;color:#090D10;font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
+.steps h4{grid-column:1/-1}
+.steps>li.h{display:block;counter-increment:none} .steps>li.h::before{display:none}
+.key{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.95em;font-weight:600;line-height:1.25;color:#38BDF8;background:#1E293B;border:1px solid #475569;border-radius:5px;padding:2px 6px;white-space:nowrap;max-width:100%}
+.key.wide{white-space:normal;overflow-wrap:anywhere}
+.val{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--accent);white-space:nowrap}
+.aptname{font-size:12px;color:var(--muted);margin-top:3px;min-height:1.2em}
+.aptname.bad{color:var(--err)}
+.note{border:1px solid var(--warn);border-left-width:4px;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:13px;line-height:1.4}
+.note.bad{border-color:var(--err)}
+.note b{color:var(--warn)} .note.bad b{color:var(--err)}
+.resbox{padding:10px;border-radius:8px;background:var(--soft);margin-top:10px;font-size:14px}
+.resbox .val{font-size:16px}
+.refp{margin:0 0 8px;font-size:14px;line-height:1.5}
+.kv+.refp{margin-top:10px}
+.terms{margin:0;display:grid;gap:10px}
+.terms dt{font-weight:700;font-size:14px}
+.terms dd{margin:2px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
+.ptsbox{margin-top:10px}
+
+.ptsbox td.pos{font-weight:700;color:var(--accent)}
+.omref{display:inline-block;font:600 10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;white-space:nowrap;vertical-align:1px}
+h2>.phase{display:inline-grid;place-items:center;justify-content:center;align-content:center;flex:none;width:26px;height:26px;border-radius:7px;border:2px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:800;letter-spacing:0;margin-right:2px}
+h2:has(.phase){justify-content:flex-start}
+.pts{margin:10px 0 0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.45}
+[data-view=oma] td,[data-view=oma] th{white-space:normal;vertical-align:top}
+[data-view=oma] td.mono{white-space:nowrap}
+@media (max-width:360px){.tabbar button{font-size:10px;letter-spacing:.02em}}
+.qt td,.qt th{white-space:normal;vertical-align:top}
+.qt td.mono{white-space:nowrap}
+
+table.cht{font-size:12px}
+table.cht th,table.cht td{text-align:right;white-space:nowrap;padding:6px 4px}
+table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{text-align:left;padding-left:2px}
+table.cht thead tr:first-child th:first-child{white-space:normal}
+table.cht th{font-size:10.5px}
+table.cht tr.grp th{text-align:center;border-bottom:1px solid var(--line)}
+table.cht thead tr:first-child th:first-child,table.cht tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 0 var(--line)}
+.swipe{font-size:12px;color:var(--muted);margin:0 0 6px}
+@media (min-width:600px){.swipe{display:none}}
+.qd{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.qd summary{font-size:13px;font-weight:700;color:var(--h-ink);padding:4px 0}
+/* one style for every sub-header inside a section */
+.steps h4,.ptsbox h4,.qh{margin:16px 0 8px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+.ptsbox h4{margin-top:0}
+/* source chip on the right of a header */
+.src{display:inline-block;flex:none;margin-left:auto;font:600 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px;white-space:nowrap;letter-spacing:0;text-transform:none}
+h2>.src{display:inline-block}
+/* tab header: same block at the top of every tab */
+.vhead{padding:2px 2px 0}
+.vhead .vt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;line-height:1.2;color:var(--ink)}
+.vhead .vt .src{margin-left:0}
+.vhead .vs{margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
+/* section header band: tinted strip across the top of the card */
+section>h2:first-child{margin:-14px -14px 12px;padding:11px 14px 10px 18px;background:var(--h-bg);border-bottom:1px solid var(--h-rule);border-radius:9px 9px 0 0}
+section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 0}
 </style>
 </head>
 <body>
 <main>
   <header class="appbar">
-    <h1>EDTO CRZ <span id="tabTitle" class="tabtitle"></span><small class="byline">B737 engine inop</small></h1>
+    <h1>EDTO CRZ <span id="tabTitle" class="tabtitle"></span></h1>
     <span class="right">
       <button type="button" id="updBadge" class="updbadge" hidden>Update available</button>
       <button type="button" id="setOpen" class="iconbtn" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -106,19 +247,72 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
       <dd><div class="seg" id="themeSeg" role="radiogroup" aria-label="Appearance"><button type="button" data-theme="device" role="radio">Device</button><button type="button" data-theme="light" role="radio">Light</button><button type="button" data-theme="dark" role="radio">Dark</button></div></dd>
       <dt>Version</dt><dd id="verTxt" class="mono"></dd>
       <dt>Updates</dt><dd><button type="button" id="updBtn">Check for update</button> <span id="updMsg" class="s"></span></dd>
-      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 (1 Oct 2024)</dd>
+      <dt>Data</dt><dd class="s">B737-800 · D6-27370-8H6-MAS OI.4.6 and OI.4.7 (1 Oct 2024)<br>60 / 120 min = 420 / 820 NM · OM-A Table 8.5.6.6(1), Rev 10.3.0</dd>
+      <dt>Credits</dt><dd class="s">PDF.js (Apache 2.0) · airportsdata (MIT) · Natural Earth land outlines · World Magnetic Model 2025</dd>
     </dl>
   </dialog>
 
   <!-- ================= CRZ ================= -->
   <div class="view" data-view="crz" hidden>
-    <section class="empty">Cruise calculations: coming next.</section>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">Cruise<span class="src">OFP</span></div><p class="vs">Import an OFP or pair two airports to see the great-circle route, 60 minute rings, and EDTO alternates.</p></header>
+    <section id="fpSec">
+      <h2><span class="t">Flight plan</span> <span><button class="ofpbtn" id="ofpPick" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="ofpPasteBtn" type="button">Paste text</button> <button class="link danger" id="ofpClear" type="button" hidden>Clear</button></span></h2>
+      <input type="file" id="ofpFile" accept="application/pdf,.pdf,text/plain,.txt" hidden>
+      <div id="ofpPaste" hidden>
+        <textarea id="ofpText" rows="6" placeholder="Paste the OFP text here" spellcheck="false"></textarea>
+        <div class="btnrow"><button type="button" id="ofpRead">Read pasted text</button><button type="button" id="ofpPasteX">Cancel</button></div>
+      </div>
+      <div class="msg" id="ofpMsg" hidden></div>
+      <div class="hint" id="fpEmpty" style="margin-top:0">Load the briefing package (PDF) or paste its text (read <b>on this device only</b>, works offline), or pair any two airports below to plot a direct great-circle route.</div>
+      <div id="pairBox">
+        <div class="r2" style="margin-top:8px">
+          <div><label for="pairDep">Departure</label><input id="pairDep" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO / IATA"><div class="aptname" id="pairDepName"></div></div>
+          <div><label for="pairDst">Destination</label><input id="pairDst" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO / IATA"><div class="aptname" id="pairDstName"></div></div>
+        </div>
+      </div>
+      <div id="fpBody" hidden></div>
+    </section>
+
+    <section id="mapSec" hidden>
+      <h2><span class="t">Map</span> <span class="s" id="mapSub"></span></h2>
+      <div class="mapwrap">
+        <svg id="map" role="img" aria-label="Route map with 60 minute rings around the EDTO alternates"></svg>
+        <div class="zoomctl"><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zOut" aria-label="Zoom out">−</button><button type="button" id="zFit" aria-label="Fit route" title="Fit route">⤢</button></div>
+      </div>
+      <div class="mapctl">
+        <label class="chk"><input type="checkbox" id="windOn"> Show wind</label>
+        <select id="windFl" aria-label="Wind level"></select>
+      </div>
+      <div class="legend" id="mapLegend"></div>
+    </section>
+
+    <section id="renSec" hidden>
+      <h2><span class="t">Re-nominate EDTO alternates</span> <span><button class="link" id="renReset" type="button">Reset to OFP</button></span></h2>
+      <div class="r2">
+        <div><label for="ea1">En-route alternate 1</label><input id="ea1" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO"><div class="aptname" id="ea1Name"></div></div>
+        <div><label for="ea2">En-route alternate 2</label><input id="ea2" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO"><div class="aptname" id="ea2Name"></div></div>
+      </div>
+      <div id="renOut"></div>
+    </section>
+
+    <section id="edtoPtSec" hidden>
+      <h2><span class="t">EDTO points in the OFP</span></h2>
+      <div class="tablewrap"><table id="edtoPtTbl"></table></div>
+      <div class="hint" id="edtoPtHint"></div>
+    </section>
+
+    <section id="wpSec" hidden>
+      <details><summary id="wpSum">Waypoints</summary>
+        <div class="tablewrap" style="margin-top:8px"><table id="wpTbl"></table></div>
+      </details>
+    </section>
   </div>
 
   <!-- ================= EDTO ================= -->
   <div class="view" data-view="edto" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">EDTO calculator<span class="src">QRH OI.4.6–4.7</span></div><p class="vs">Weight at the ETP, engine-inop altitude capability and critical fuel. B737-800.</p></header>
     <section>
-      <h2>Aircraft</h2>
+      <h2><span class="t">Aircraft</span></h2>
       <div class="seg full" id="variantSeg" role="radiogroup" aria-label="Aircraft variant">
         <button type="button" role="radio" data-v="737-800">737-800</button><button type="button" role="radio" data-v="737-8">737-8</button>
       </div>
@@ -131,7 +325,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 
     <!-- ---------- Altitude capability ---------- -->
     <section data-calc="alt">
-      <h2>Weight</h2>
+      <h2><span class="t">Weight</span></h2>
       <div class="r2">
         <div><label for="zfw">ZFW kg</label><input id="zfw" data-k="zfw" class="mono" type="number" inputmode="numeric" step="100" min="0" placeholder="62000"></div>
         <div><label for="fob">Fuel on board kg</label><input id="fob" data-k="fob" class="mono" type="number" inputmode="numeric" step="100" min="0" placeholder="14000"></div>
@@ -139,7 +333,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
     </section>
 
     <section data-calc="alt">
-      <h2>Fuel to burn to ETP</h2>
+      <h2><span class="t">Fuel to burn to ETP</span></h2>
       <div class="r3">
         <div><label for="nowUtc">Current UTC</label><div class="inbtn"><input id="nowUtc" data-k="nowUtc" class="mono" inputmode="numeric" placeholder="1200" maxlength="5" autocomplete="off"><button type="button" id="nowBtn">Now</button></div></div>
         <div><label for="etaUtc">ETA ETP UTC</label><input id="etaUtc" data-k="etaUtc" class="mono" inputmode="numeric" placeholder="1330" maxlength="5" autocomplete="off"></div>
@@ -148,19 +342,16 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
     </section>
 
     <section data-calc="alt">
-      <h2>Conditions</h2>
+      <h2><span class="t">Conditions</span></h2>
       <div class="r2">
         <div><label for="isa">ISA deviation °C</label><input id="isa" data-k="isa" class="mono" type="number" inputmode="decimal" step="1" placeholder="0"></div>
-        <div><label for="antiIce">Anti-ice</label><select id="antiIce" data-k="antiIce"><option value="off">Off</option><option value="engine">Engine</option><option value="engineWing">Engine + wing</option></select></div>
       </div>
     </section>
 
     <section data-calc="alt" aria-live="polite">
-      <h2>Result</h2>
+      <h2><span class="t">Result · weight at ETP</span></h2>
       <div class="big"><dl class="res">
         <dt>Gross weight at ETP</dt><dd id="rGw">—</dd>
-        <dt>Alt capability · LRC</dt><dd id="rLrc">—</dd>
-        <dt>Alt capability · 310 KIAS</dt><dd id="r310">—</dd>
       </dl></div>
       <dl class="res">
         <dt>Time to ETP</dt><dd id="rTime">—</dd>
@@ -168,12 +359,31 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
         <dt>Fuel remaining at ETP</dt><dd id="rRem">—</dd>
       </dl>
       <div class="msg" id="rMsg" hidden></div>
-      <div class="hint">Engine inop, max continuous thrust, 100 ft/min residual climb. Linear interpolation, no extrapolation. Altitudes rounded down to 100 ft.</div>
+    </section>
+
+    <section data-calc="alt" aria-live="polite">
+      <h2><span class="t">Result · engine-inop altitude</span> <span class="src">OI.4.6</span></h2>
+      <div class="altgrid">
+        <div class="altcard lrc">
+          <h3>Long Range Cruise<small>Standard strategy</small></h3>
+          <div class="alt"><span>No Anti&#8209;Ice</span><b id="aLrcOff">--</b></div>
+          <div class="alt"><span>Engine Anti&#8209;Ice</span><b id="aLrcEng">--</b></div>
+          <div class="alt"><span>Engine + Wing Anti&#8209;Ice</span><b id="aLrcWing">--</b></div>
+        </div>
+        <div class="altcard fix">
+          <h3>Fixed Speed<small>310 KIAS</small></h3>
+          <div class="alt"><span>No Anti&#8209;Ice</span><b id="a310Off">--</b></div>
+          <div class="alt"><span>Engine Anti&#8209;Ice</span><b id="a310Eng">--</b></div>
+          <div class="alt"><span>Engine + Wing Anti&#8209;Ice</span><b id="a310Wing">--</b></div>
+        </div>
+      </div>
+      <div class="msg" id="aMsg" hidden></div>
+      <div class="hint">At gross weight at ETP and ISA deviation. Max continuous thrust, 100 ft/min residual climb. Linear interpolation, no extrapolation. Rounded down to 100 ft.</div>
     </section>
 
     <!-- ---------- Critical fuel ---------- -->
     <section data-calc="cf" hidden>
-      <h2>Inputs</h2>
+      <h2><span class="t">Critical fuel · inputs</span></h2>
       <div class="r2">
         <div><label for="dist">Distance ETP → alt NM</label><input id="dist" data-k="dist" class="mono" type="number" inputmode="numeric" step="10" min="0" placeholder="900"></div>
         <div><label for="cpw">Weight at CP kg</label><div class="inbtn"><input id="cpw" data-k="cpw" class="mono" type="number" inputmode="numeric" step="100" min="0"><button type="button" id="gwBtn" disabled>ETP GW</button></div></div>
@@ -186,7 +396,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
     </section>
 
     <section data-calc="cf" hidden aria-live="polite">
-      <h2>Result</h2>
+      <h2><span class="t">Result · critical fuel</span> <span class="src">OI.4.7</span></h2>
       <div class="big"><dl class="res"><dt>Critical fuel · engine inop</dt><dd id="cTotal">—</dd></dl></div>
       <dl class="res">
         <dt>Nil-wind fuel</dt><dd id="cNil">—</dd>
@@ -200,8 +410,372 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
   </div>
 
   <!-- ================= APP ================= -->
-  <div class="view" data-view="app" hidden>
-    <section class="empty">Approach calculations: coming next.</section>
+  <div class="view" data-view="ref" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">Reference<span class="src">Handout</span></div><p class="vs">EDTO terms, diversion strategies, the re-nomination steps and the critical fuel checks.</p></header>
+    <section>
+      <h2><span class="t">EDTO in brief</span> <span class="src">OM-A 8.5.6</span></h2>
+      <p class="refp"><b>EDTO</b> (Extended Diversion Time Operations) is flight beyond <b>60 minutes</b> from an adequate en-route alternate, inside the approved maximum diversion time. For the MAS B737-800 that is <b>120 minutes</b>.</p>
+      <dl class="kv">
+        <dt>60 min</dt><dd><span class="mono">420 NM</span></dd>
+        <dt>120 min</dt><dd><span class="mono">820 NM</span></dd>
+        <dt>Basis</dt><dd>Still air, ISA, one engine out, M0.79 / 310 kt, 75,000 kg</dd>
+      </dl>
+      <p class="refp">A flight is non-EDTO when the whole route stays inside 60 minute circles round adequate airports. Where the route leaves those circles there is an <b>EDTO segment</b>, and EDTO rules apply to the flight.</p>
+    </section>
+
+    <section>
+      <h2><span class="t">Terms</span></h2>
+      <dl class="terms">
+        <dt>Maximum diversion time</dt><dd>120, 180 or 207 min as approved. It sizes the area of operation only. It is not a time limit on an actual diversion.</dd>
+        <dt>Maximum diversion distance</dt><dd>Distance covered in that time, still air and ISA, at the one-engine-out speed schedule, including the descent to diversion altitude.</dd>
+        <dt>Area of operations</dt><dd>Circles of maximum diversion distance round the adequate airports. The route must stay inside them.</dd>
+        <dt>EEP · entry point</dt><dd>On the route, one hour (still air, ISA, one-engine-out speed) from the last adequate airport. Start of the EDTO segment.</dd>
+        <dt>EXP · exit point</dt><dd>Where the route comes back within one hour of an adequate airport. End of the EDTO segment.</dd>
+        <dt>EDP · equal distance point</dt><dd>On the route, the same distance from both en-route alternates.</dd>
+        <dt>ETP · equal time point</dt><dd>On the route, the same flying time to both en-route alternates. Same as the EDP in nil wind.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span class="t">Diversion strategies</span> <span class="src">OM-A 8.5.10.3</span></h2>
+      <dl class="terms">
+        <dt>Standard</dt><dd>M0.79 / 280 kt, LRC ceiling. Use when fuel is critical.</dd>
+        <dt>Fixed speed</dt><dd>M0.79 / 310 kt. The speed the EDTO area and the critical fuel chart are based on.</dd>
+        <dt>Obstacle</dt><dd>Max continuous thrust at minimum manoeuvring speed (driftdown) until the obstacle is cleared, then standard or fixed speed.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span class="t">Re-nominating an alternate</span></h2>
+      <p class="refp">Needed when an en-route alternate becomes unsuitable after departure (weather, NOTAM, closure). Pick the new airport from the EDTO area of operations chart, then use the FMC. <b>Never press EXEC</b> during this work.</p>
+      <ol class="steps">
+        <li><div><b>Suitability.</b> Check latest weather and NOTAMs for the new alternates (ACARS if available).</div></li>
+        <li><div><b>EDP.</b> Find the point equal in distance to both alternates.
+          <ul class="acts">
+            <li><b>Enter</b> EA1, then EA2, on the last LEGS page. <span class="caution">Do not execute.</span> <b>Note</b> the track and distance.</li>
+            <li><b>Type</b> <span class="key wide">EA2/-half distance</span> between them to make the halfway fix.</li>
+            <li><b>Move</b> the halfway fix to the FIX page, then <b>erase</b> EA1 and EA2 from LEGS.</li>
+            <li><b>Enter</b> the track <b>+90°</b> if the route is to the right, <b>−90°</b> if to the left.</li>
+            <li><b>Line-select</b> that radial and <b>put</b> it in LEGS on the leg it crosses. That waypoint is the EDP.</li>
+          </ul></div></li>
+        <li><div><b>ETP.</b> Find the point equal in time to both alternates.
+          <ul class="acts">
+            <li><b>Check</b> the winds are in <b>RTE DATA</b>.</li>
+            <li><b>Put</b> EA1 under the EDP. <span class="caution">Do not execute.</span></li>
+            <li><b>Read</b> its ETA on RTE DATA, then <b>ERASE</b>.</li>
+            <li><b>Repeat</b> for EA2.</li>
+            <li><b>Calculate</b> the shift: <span class="key wide">ETA difference ÷ 2 × NM per min</span> (8 NM/min at 480 kt TAS, so difference × 4).</li>
+            <li><b>Move</b> the EDP <b>into the wind</b>: <span class="key">EDP/±NM</span> (tailwind −, headwind +).</li>
+            <li><b>Recheck</b> both ETAs. <b>Adjust</b> 1 or 2 NM until they match.</li>
+          </ul></div></li>
+        <li><div><b>Critical fuel by FMC.</b> See below.</div></li>
+        <li><div><b>Critical fuel by chart.</b> See below.</div></li>
+      </ol>
+      <div class="btnrow"><button type="button" data-goto="crz">Work it out on the CRZ tab</button></div>
+      <div class="hint">For datalink or CPDLC, move the ETP to the FIX page: only published waypoints should stay in LEGS.</div>
+    </section>
+
+    <section>
+      <h2><span class="t">Critical fuel check · FMC</span></h2>
+      <p class="refp">A quick cross-check of fuel on arrival at the alternate from the ETP, depressurised. <span class="caution">PROGRESS is next to EXEC: go slowly.</span></p>
+      <ol class="steps">
+        <li><div><b>RTE</b> page 1: enter the alternate as DEST. <span class="caution">Do not execute.</span></div></li>
+        <li><div><b>CRZ</b> page: set the strategy speed. Fuel critical = standard strategy, <span class="key">280</span> kt.</div></li>
+        <li><div><b>DES</b> page: speed <span class="key">280</span>, delete the 10,000 ft speed restriction.</div></li>
+        <li><div><b>LEGS:</b> at the ETP enter <span class="key">280/10000</span>.</div></li>
+        <li><div>Put the alternate right under the ETP as the last waypoint, with <span class="key">/1500</span>.</div></li>
+        <li><div>Optional, for a better descent path: <span class="key">ETP/50</span> placed after the ETP.</div></li>
+        <li><div><b>PROGRESS:</b> fuel at the alternate must be above <span class="limit">2,400 kg</span>.</div></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2><span class="t">Critical fuel check · chart</span></h2>
+      <ol class="steps">
+        <li><div>QRH Ops Info: engine inoperative 310 KIAS critical fuel reserves.</div></li>
+        <li><div>Weight at the new ETP = ZFW + (fuel on board − fuel to burn to the ETP), or from the OFP.</div></li>
+        <li><div>Enter with the distance from ETP to the alternate and the wind. Apply the ISA and icing corrections.</div></li>
+        <li><div>Compare fuel on board at the ETP with the critical fuel. The handout asks for equal or more.</div></li>
+        <li><div>If it is less, make sure arrival fuel is above minimum diversion fuel (MDF).</div></li>
+      </ol>
+      <div class="note"><b>OM-A 8.5.9.8:</b> there is no EDTO rule that you must reach the critical point with fuel at or above the critical fuel, and no diversion is required for that alone. Normal fuel policy applies. See the OMA tab.</div>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Weight at ETP</button><button type="button" data-goto="edto" data-open="cf">Critical fuel chart</button><button type="button" data-goto="qrh">QRH pages</button></div>
+    </section>
+
+    <div class="hint" style="text-align:center">Summary of “EDTO Basics &amp; Procedures, B737-800” (FMC works, 2018) and the MAS EDTO handout (2025). A memory aid only: the current OM-A, OM-B and FCOM govern.</div>
+  </div>
+
+  <div class="view" data-view="oma" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">OM-A policy<span class="src">OM-A Rev 10.3.0</span></div><p class="vs">EDTO from planning to the EDTO segment, with paragraph numbers.</p></header>
+    <section>
+      <h2><span class="t">At a glance</span> <span class="src">8.5.5–8.5.6</span></h2>
+      <p class="refp">What OM-A Part A says about an EDTO flight, in the order you meet it: planning, preparation, before the entry point, and inside the EDTO segment. B737-800 / -8.</p>
+      <dl class="kv">
+        <dt>Threshold</dt><dd><b class="mono">60 min</b> from an adequate airport, one engine out, still air, ISA <span class="omref">8.5.6.3</span></dd>
+        <dt>Approval</dt><dd><b class="mono">120 min</b> maximum diversion time <span class="omref">8.5.5</span></dd>
+        <dt>Speed</dt><dd><b class="mono">M0.79 / 310 kt</b> at 75,000 / 79,000 kg <span class="omref">8.5.6.6</span></dd>
+      </dl>
+      <div class="tablewrap" style="margin-top:10px"><table>
+        <thead><tr><th>Diversion time</th><th>60</th><th>90</th><th>120</th><th>180 min</th></tr></thead>
+        <tbody><tr><td>Max distance</td><td class="mono">420</td><td class="mono">620</td><td class="mono"><b>820</b></td><td class="mono">1200 NM</td></tr></tbody>
+      </table></div>
+      <div class="hint">The maximum diversion time can never exceed the cargo fire suppression time in the FCOM. <span class="omref">8.5.6.6</span></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">1</span> <span class="t">Planning · the airports</span> <span class="src">8.5.6.2 · 8.5.8.2</span></h2>
+      <dl class="terms">
+        <dt>Adequate <span class="omref">8.5.6.2</span></dt><dd>Landing performance is met at the expected weight, and at the time of use the airport is open with ATC or CTAF, navaids, weather reporting, lighting, emergency services, at least one let-down aid (ILS, VOR/DME, VOR or NDB), and fire cover equal to RFFS category 4 (30 minutes notice is acceptable for an EDTO alternate).</dd>
+        <dt>Suitable <span class="omref">8.5.8.3</span></dt><dd>An adequate airport whose forecast meets the EDTO planning minima for the whole period of suitability.</dd>
+      </dl>
+      <div class="tablewrap" style="margin-top:10px"><table>
+        <thead><tr><th>Approach</th><th>Ceiling</th><th>Visibility</th></tr></thead>
+        <tbody>
+          <tr><td>Precision</td><td class="mono">DA(H) + 200 ft</td><td class="mono">+ 800 m</td></tr>
+          <tr><td>Non-precision<br>or circling</td><td class="mono">MDA(H) + 400 ft</td><td class="mono">+ 1500 m (1 sm)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="hint">EDTO weather planning minima. <span class="omref">8.5.8.2</span></div>
+      <ul class="pts">
+        <li><b>B737 cannot use CAT II / III</b> alternate minima: no autoland with one engine out.</li>
+        <li>Wind plus gust must be within limits, including the crosswind limit, and the runway condition forecast counts.</li>
+        <li>A <b>PROB40 or TEMPO</b> below minima must be taken into account. Probabilities below 30% are ignored. <span class="omref">8.5.8.7</span></li>
+        <li>MEL items that raise approach minima also raise the EDTO alternate minima.</li>
+        <li>Departure and destination need not meet EDTO alternate minima unless they are also used as EDTO alternates.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="phase">2</span> <span class="t">Planning · period of suitability</span> <span class="src">8.5.8.3</span></h2>
+      <p class="refp">The forecast must stay at or above EDTO minima from <b>1 hour before the earliest ETA</b> to <b>1 hour after the latest ETA</b> at each EDTO alternate. The OFP prints the period (“ENRTE ALTNS, weather suitability period”). <span class="omref">8.5.8.3</span></p>
+      <dl class="terms">
+        <dt>Earliest ETA</dt><dd>Two-engine diversion from the first ETP for that airport, at normal cruise level and speed.</dd>
+        <dt>Latest ETA</dt><dd>Two-engine diversion from the second ETP for that airport, at FL100 or MORA, at LRC (depressurised only).</dd>
+      </dl>
+      <div class="note"><b>Delay over 1 hour:</b> the period must be worked out again and checked against the forecast.</div>
+      <p class="refp" style="margin-top:10px"><b>Hybrid EDTO:</b> if only one alternate of the pair is suitable (the other adequate but below minima), the segment may be planned on that one airport, provided its maximum diversion distance covers the whole EDTO segment. <span class="omref">8.5.8.3</span></p>
+    </section>
+
+    <section>
+      <h2><span class="phase">3</span> <span class="t">Planning · fuel</span> <span class="src">8.5.8.5 · 8.1.7.7</span></h2>
+      <p class="refp">The area of operation is still air and ISA. <b>Fuel is not:</b> it uses the forecast wind and temperature, for a failure at the <b>critical point (CP)</b>. On the OFP the CP may appear as the ETP between two EDTO alternates. <span class="omref">8.5.8.5</span></p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Scenario at the CP</th><th>Profile</th></tr></thead>
+        <tbody>
+          <tr><td>Engine failure only</td><td>Never fuel critical (higher levels). Not normally computed.</td></tr>
+          <tr><td>Depressurisation,<br>two engines</td><td>Emergency descent to FL100 or MORA, cruise at <b>LRC</b>.</td></tr>
+          <tr><td>Engine failure +<br>depressurisation</td><td>Emergency descent to FL100 or MORA, cruise at the <b>EDTO speed</b> (310 kt).</td></tr>
+        </tbody>
+      </table></div>
+      <p class="refp" style="margin-top:10px">The critical fuel is the higher of the last two. It includes: <span class="omref">8.1.7.7</span></p>
+      <ul class="pts">
+        <li>Burn from the CP to the alternate in the worst case</li>
+        <li>5% of that burn as contingency</li>
+        <li>5% fuel mileage penalty, or the demonstrated performance factor</li>
+        <li>15 minutes holding at 1,500 ft over the alternate</li>
+        <li>An approach, a go-around and a second approach</li>
+        <li>Any MEL / CDL effect, and APU burn if it is needed as a power source</li>
+        <li>If icing is forecast (OAT below −9 °C at the CP or the alternate): engine and wing anti-ice, and ice on unheated surfaces <span class="omref">8.5.8.8</span></li>
+      </ul>
+      <div class="hint">If the EDTO plan needs more than the standard plan, the extra shows as EDTO / ADDNL in the OFP fuel summary.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">4</span> <span class="t">Crew preparation</span> <span class="src">8.5.9.1</span></h2>
+      <ol class="steps">
+        <li><div>Check the required EDTO alternates. Confirm each is <b>adequate</b> from NOTAMs and SNOWTAMs.</div></li>
+        <li><div>Check each alternate’s <b>period of validity</b> on the OFP, and that the forecast ceiling and visibility are above EDTO minima for that period.</div></li>
+        <li><div>Check the OFP critical fuel. <b>Minimum sector fuel is the higher of the EDTO fuel plan and the standard fuel plan.</b></div></li>
+        <li><div>If any of these is not met: a new OFP, new EDTO alternates and new calculations are required.</div></li>
+        <li><div><b>Technical log:</b> no open defect affecting EDTO status. Check the MEL for EDTO limits (“for ER operations” / “except for ER operations”). An aircraft that cannot comply is placarded <b>NON-EDTO</b>. <span class="omref">8.5.7</span></div></li>
+        <li><div>Cockpit preparation and EDTO system checks per OM-B. After start, cross-check fuel on board before take-off.</div></li>
+      </ol>
+      <div class="note"><b>ATC clearances.</b> The PIC must not accept a clearance that takes the aircraft outside the approved EDTO envelope, in distance or flight level. <span class="omref">8.5.9.1</span></div>
+      <div class="hint">Briefing folder for an EDTO flight: OFP with EEP / ETP / EXP and fuel plans, weather for the route and all EDTO alternates, NOTAMs for all en-route alternates. <span class="omref">8.5.8.12</span></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">5</span> <span class="t">Before the entry point (EEP)</span> <span class="src">8.5.9.6</span></h2>
+      <ol class="steps">
+        <li><div>Get a <b>weather update</b> for the declared EDTO alternates (METAR, TAF, SIGMET, SPECI), with dispatch or by your own means, plus any new NOTAM or SNOWTAM.</div></li>
+        <li><div>Weather at the ETA at each alternate must be above <b>company or crew minima</b>.</div></li>
+        <li><div>If an alternate is below those minima or not available: <b>reassess the area of operation</b> on the remaining suitable airports, and consider a re-route or turn-back.</div></li>
+        <li><div>The PIC confirms the decision: continue, re-route or turn back.</div></li>
+      </ol>
+      <div class="note"><b>Airborne, the EDTO dispatch minima no longer apply.</b> The test before the EEP is normal company or crew landing minima, not the +200 ft / +400 ft planning minima. <span class="omref">8.5.9.6</span></div>
+      <div class="btnrow"><button type="button" data-goto="crz">Re-nominate on the CRZ tab</button><button type="button" data-goto="ref">FMC steps (REF)</button></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">6</span> <span class="t">In the EDTO segment</span> <span class="src">8.5.9.8 · 8.5.10</span></h2>
+      <dl class="terms">
+        <dt>Weather <span class="omref">8.5.9.6</span></dt><dd>Keep updating the en-route alternates’ weather. <b>After the EEP there is no requirement to change the flight if the weather drops below minima.</b></dd>
+        <dt>Fuel <span class="omref">8.5.9.8</span></dt><dd>Normal company fuel monitoring applies. <b>There is no EDTO rule that you must reach the CP with fuel on board at or above the OFP critical fuel.</b> The CP is not a reclearance point. If the estimate at the CP is lower, no diversion is required as long as estimated fuel at destination covers the diversion to the destination alternate. Minimise consumption.</dd>
+        <dt>Critical fuel in flight</dt><dd>Base it on actual conditions. The OFP figure may include an icing reserve that is not needed if no icing is forecast.</dd>
+        <dt>ETP on the OFP <span class="omref">8.5.8.4</span></dt><dd>It may not show equal times to the two airports, because the OFP’s critical scenario is usually depressurisation, not engine failure alone.</dd>
+      </dl>
+      <p class="refp" style="margin-top:12px"><b>When to consider a re-route or diversion</b> <span class="omref">8.5.10.1</span></p>
+      <ul class="pts">
+        <li>An alternate falls below company or crew minima, or becomes unsuitable, <b>before the EEP</b></li>
+        <li>Loss of the required RNP capability before entering the area</li>
+        <li>A failure that requires landing at the nearest en-route alternate</li>
+        <li>A failure that increases fuel burn beyond the reserves available</li>
+      </ul>
+      <p class="refp" style="margin-top:12px"><b>Diversion strategy</b> <span class="omref">8.5.10.3</span></p>
+      <dl class="terms">
+        <dt>Fixed speed</dt><dd>The speed the area of operation is built on. <b>Expected after an engine failure, in-flight fire or other warning</b>, when fuel is not critical.</dd>
+        <dt>Standard (LRC)</dt><dd>Near minimum fuel burn. Use when fuel is critical.</dd>
+        <dt>Obstacle</dt><dd>Best height keeping at very low speed, where terrain or a height restriction exists.</dd>
+      </dl>
+      <div class="note"><b>PIC authority.</b> The PIC may choose or deviate from any strategy and speed after assessing the situation, <b>even if the diversion then takes longer than the approved diversion time</b>. Watch the fuel when deviating from the planned speed. <span class="omref">8.5.10.4</span></div>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Altitude capability</button><button type="button" data-goto="edto" data-open="cf">Critical fuel</button></div>
+    </section>
+
+    <div class="hint" style="text-align:center">Summary of MAB OM-A Revision 10.3.0 (10 Mar 2026): 8.1.7.7, 8.5 and 8.10.14.2. Paragraph numbers are shown so you can check the source. A memory aid only: the controlled OM-A governs.</div>
+  </div>
+
+  <div class="view" data-view="qrh" hidden>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">QRH procedures<span class="src">D6-27370-8H6-MAS</span></div><p class="vs">The EDTO pages OI.4.1 to OI.4.7 in flight order, with the charts.</p></header>
+    <section>
+      <h2><span class="t">Pages</span> <span class="src">OI.4</span></h2>
+      <p class="refp">The EDTO pages of the Boeing 737 FCOM QRH (Operational Information, chapter OI, section 4; MAS issue D6-27370-8H6-MAS), in the order you use them. Page numbers are shown against each item.</p>
+      <div class="tablewrap"><table class="qt">
+        <thead><tr><th>Page</th><th>Content</th><th>Dated</th></tr></thead>
+        <tbody>
+          <tr><td class="mono"><b>OI.4.1</b></td><td>Before departure, after airborne, before the EEP</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.2</b></td><td>APU choice, fuel situation, EDTO fuel alternate</td><td class="mono">5 Apr 2025</td></tr>
+          <tr><td class="mono"><b>OI.4.3</b></td><td>Alternate check before the EEP (flow chart)</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.4</b></td><td>Re-nominating an alternate; EDTO briefing</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.5</b></td><td>Briefing (cont.); monitoring; after the EXP</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.6</b></td><td>Engine inop altitude capability, B737-800</td><td class="mono">1 Oct 2024</td></tr>
+          <tr><td class="mono"><b>OI.4.7</b></td><td>Engine inop critical fuel reserves, B737-800</td><td class="mono">1 Oct 2024</td></tr>
+        </tbody>
+      </table></div>
+      <div class="hint">OI.4.8 is blank. The QRH copy supplied lists revisions up to Rev 20 (30 Jun 2026); none touches OI.4 after 5 Apr 2025.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">1</span> <span class="t">Before departure and after airborne</span> <span class="src">OI.4.1</span></h2>
+      <ul class="acts">
+        <li><b>Test the crossfeed valve.</b> Selector OPEN: the VALVE OPEN light goes bright, then dim. Selector CLOSE: bright, then out. Enter any failure in the Technical Log.</li>
+        <li><b>Insert</b> the EDTO alternates into FMC FIX INFO, then <b>verify</b> them.</li>
+        <li><b>Send the EDTO message</b> once airborne, to FDC by ACARS or SATCOM (or the EDTO prompt if fitted). It carries: <span class="key wide">ATD · TOW · TOF · EEP · ETP · EXP · ETA</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="phase">2</span> <span class="t">Before the EEP</span> <span class="src">OI.4.1–4.2</span></h2>
+      <ul class="acts">
+        <li><b>Review</b> aircraft position. ANP must be better than RNP. <span class="omref">OI.4.1</span></li>
+        <li><b>Check</b> aircraft status: master caution recall, and review the EDTO restrictions. EDTO critical equipment is listed in the SOM. <span class="omref">OI.4.1</span></li>
+        <li><b>APU (choose one).</b> <span class="omref">OI.4.2</span>
+          <ul class="acts">
+            <li><b>APU on demand:</b> keep the APU <b>OFF</b>. B737-800 9M-MXA to 9M-MXY, and all B737-8.</li>
+            <li><b>Non-APU on demand:</b> <b>START</b> the APU and verify the APU GEN OFF bus light is on. B737-800 9M-FFF and 9M-MLK to 9M-MLV.</li>
+          </ul></li>
+        <li><b>Check the fuel situation.</b> Forecast fuel over the ETP should be above the critical fuel required. If it is below, compare arrival fuel with MDF and make sure it is above MDF to continue into EDTO. <span class="omref">OI.4.2</span></li>
+        <li><b>Check the EDTO fuel alternate</b> with the flow chart below. <span class="omref">OI.4.2</span></li>
+      </ul>
+      <div class="note"><b>Compare with OM-A 8.5.9.8.</b> OM-A says there is no EDTO rule to reach the critical point with fuel at or above the critical fuel, and that no diversion is required for that alone. The QRH asks you to check arrival fuel against MDF when it is below. Both are on the OMA tab.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">3</span> <span class="t">Alternate check (flow chart)</span> <span class="src">OI.4.3</span></h2>
+      <ol class="steps">
+        <li><div><b>Check</b> updated weather and NOTAMs for the nominated EDTO alternates, and that the airport charts are accessible.</div></li>
+        <li><div>If the alternates <b>satisfy the criteria</b>: brief, and continue into EDTO.</div></li>
+        <li><div>If not: <b>request</b> a new alternate from FDC, or <b>re-nominate</b> manually, and <b>check fuel</b>.</div></li>
+        <li><div>If the new alternates satisfy the criteria: brief, and continue into EDTO.</div></li>
+        <li><div>If not: <b>reroute</b> to non-EDTO or divert, and <b>advise FDC</b>.</div></li>
+      </ol>
+      <div class="hint">Reconstructed from the text of the flow chart. Compare it with the figure on OI.4.3.</div>
+    </section>
+
+    <section>
+      <h2><span class="phase">4</span> <span class="t">Re-nominating an alternate</span> <span class="src">OI.4.4</span></h2>
+      <p class="refp">When a re-nomination is needed, send a downlink to FDC by ACARS, or call FDC by SATCOM. Ask for:</p>
+      <ul class="acts">
+        <li>The <b>new EA</b></li>
+        <li>The <b>EEP, ETP and EXP coordinates</b> and the <b>EDTO critical fuel</b></li>
+        <li>A <b>weather and NOTAM update</b></li>
+      </ul>
+      <p class="refp" style="margin-top:10px">The new waypoints FDC uplinks may be inserted in the FMC. Brief the changes.</p>
+      <div class="btnrow"><button type="button" data-goto="crz">Work it out on the CRZ tab</button></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">5</span> <span class="t">EDTO briefing</span> <span class="src">OI.4.4–4.5</span></h2>
+      <ol class="steps">
+        <li><div><b>Decide the diversion airport.</b> Enter the alternates in FMC FIX INFO and/or the ALTN page. FMC route 2 is recommended. <span class="omref">OI.4.4</span></div></li>
+        <li><div><b>Decide the diversion routing.</b> Look at both the direct track (ALTN page) and routes via airways. Route 2 is recommended.</div></li>
+        <li><div><b>Check MORA / MEA</b> on the chosen routing.</div></li>
+        <li><div><b>FMC EO CRZ page:</b> check the maximum altitude for obstacle (driftdown ceiling).</div></li>
+        <li><div><b>QRH Ops Info:</b> check the maximum altitude for standard (LRC ceiling, 280 kt / M.79). <b>PI section:</b> check the maximum altitude and speed for standard (LRC ceiling).</div></li>
+        <li><div><b>QRH Ops Info:</b> check the maximum altitude for fixed speed (310 kt / M.79 ceiling).</div></li>
+        <li><div><b>Decide the strategy:</b> obstacle, standard or fixed speed. <b>Fuel critical:</b> standard. <b>Time critical:</b> fixed speed.</div></li>
+        <li><div><b>Brief the scenarios</b> that need a diversion to the EDTO alternate, for example engine failure or fire, rapid decompression, smoke or fumes or fire without thrust loss. <span class="omref">OI.4.5</span></div></li>
+      </ol>
+      <p class="refp" style="margin-top:10px">The QRH separates two cases: <span class="omref">OI.4.5</span></p>
+      <dl class="terms">
+        <dt>Descent required, or unable to maintain altitude</dt><dd>For example thrust loss or engine failure, rapid depressurisation.</dd>
+        <dt>Descent not required, or able to maintain altitude</dt><dd>For example no thrust loss, medical, cargo fire.</dd>
+      </dl>
+      <div class="btnrow"><button type="button" data-goto="ref">FMC steps (REF)</button><button type="button" data-goto="oma">Diversion strategies (OMA)</button></div>
+    </section>
+
+    <section>
+      <h2><span class="phase">6</span> <span class="t">In the EDTO segment and after the EXP</span> <span class="src">OI.4.5</span></h2>
+      <ul class="acts">
+        <li><b>Monitor</b> the status of the en-route diversion airports.</li>
+        <li><b>Approaching each ETP,</b> review the EDTO briefing again for the next diversion airport.</li>
+        <li><b>After the EXP:</b> if the APU is on, switch it <b>off</b> for the last hour of cruise.</li>
+        <li><b>After the EXP:</b> test the crossfeed valve again (OPEN: light bright then dim; CLOSE: bright then out) and report any failure in the Technical Log.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="t">Altitude capability</span> <span class="src">OI.4.6</span></h2>
+      <p class="refp">Engine inoperative, B737-800, maximum continuous thrust, 100 ft/min residual rate of climb. Pressure altitude, ft.</p>
+      <h3 class="qh">Long Range Cruise (standard strategy)</h3>
+      <div class="tablewrap" id="qrhLrc"></div>
+      <div class="hint">Engine anti-ice on: reduce by <b>1,200 ft</b>. Engine and wing anti-ice on: reduce by <b>5,500 ft</b>.</div>
+      <h3 class="qh">310 KIAS (fixed speed strategy)</h3>
+      <div class="tablewrap" id="qrhFix"></div>
+      <div class="hint">Engine anti-ice on: reduce by <b>1,200 ft</b>. Engine and wing anti-ice on: reduce by <b>4,900 ft</b>.</div>
+      <div class="note"><b>Reading between values.</b> The page gives three ISA columns and no interpolation rule. The EDTO tab interpolates both weight and ISA. Reading the next-higher ISA column instead gives lower figures. Use <b>ISA+10 and below</b> for anything colder than +10, and there is no value above ISA+20.</div>
+      <details class="qd"><summary>In-flight (PI) section: CFM56-7B24 aircraft</summary>
+        <p class="refp" style="margin-top:8px">The in-flight QRH has Engine Inop LRC altitude chapters for the 737-800W with CFM56-7B24 and CFM56-7B26 engines, and for the 737-800WSFP1 with CFM56-7B26. Pressure altitude, ft; dated 30 Sep 2025.</p>
+        <div class="tablewrap" id="qrhB24"></div>
+        <div class="hint">Engine anti-ice on: reduce by <b>2,000 ft</b>. Engine and wing anti-ice on: reduce by <b>6,500 ft</b>.</div>
+        <div class="note bad"><b>Much lower than the table above.</b> The B26 and SFP1 chapters give the same numbers as OI.4.6. This B24 table is up to 5,700 ft lower at 85 t and 2,700 ft lower at 68.4 t, ISA+12. The QRH text supplied does not say which registrations use which table. <b>The EDTO tab calculates with the B26 / OI.4.6 numbers only.</b></div>
+      </details>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="alt">Altitude calculator</button></div>
+    </section>
+
+    <section>
+      <h2><span class="t">Critical fuel reserves</span> <span class="src">OI.4.7</span></h2>
+      <p class="refp">310 KIAS cruise critical fuel reserves, engine inoperative, B737-800.</p>
+      <div class="swipe">Swipe sideways for the weight columns.</div>
+      <div class="tablewrap" id="qrhCf"></div>
+      <div class="hint">Weights are the weight at the critical point. Fuel in 1,000 kg. Add the wind correction to the nil-wind fuel (tailwind −, headwind +). A dash means the chart gives no value.</div>
+      <h3 class="qh">Based on</h3>
+      <ul class="pts">
+        <li>Emergency descent to 10,000 ft, level cruise at 10,000 ft</li>
+        <li>250 KIAS descent to 1,500 ft, 15 minute hold at 1,500 ft</li>
+        <li>One missed approach, then approach and land</li>
+        <li>5% allowance for wind errors. Includes APU fuel burn.</li>
+      </ul>
+      <h3 class="qh">Corrections</h3>
+      <ul class="pts">
+        <li>Increase fuel required by <b>0.5%</b> for each 10 °C above ISA.</li>
+        <li>If icing is expected, increase fuel required by <b>17%</b>: engine and wing anti-ice (5%) and ice on unheated surfaces (12%).</li>
+        <li>Allowance for performance deterioration is <b>not</b> included.</li>
+      </ul>
+      <div class="note"><b>Compare, then use the higher.</b> Compare this chart with the critical fuel reserves for all engines operative and use the higher of the two. The all-engines chart is not in the app.</div>
+      <div class="btnrow"><button type="button" data-goto="edto" data-open="cf">Critical fuel calculator</button></div>
+    </section>
+
+    <div class="hint" style="text-align:center">Summary of pages OI.4.1 to OI.4.7 of the MAS 737 QRH (D6-27370-8H6-MAS) and the in-flight Engine Inop LRC table. The source is Boeing proprietary. A memory aid only: the QRH governs.</div>
   </div>
 
   <div class="brand">EDTO CRZ · reference tool, check against your approved data</div>
@@ -210,7 +784,9 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <button type="button" data-tab="crz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/></svg><span>CRZ</span></button>
   <button type="button" data-tab="edto"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>EDTO</span></button>
-  <button type="button" data-tab="app"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M12 3v3M7 17l5-8 5 8z"/></svg><span>APP</span></button>
+  <button type="button" data-tab="ref"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4M8 7h7M8 11h5"/></svg><span>REF</span></button>
+  <button type="button" data-tab="oma"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg><span>OMA</span></button>
+  <button type="button" data-tab="qrh"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1z"/><path d="M9 13l2 2 4-4"/></svg><span>QRH</span></button>
 </nav>
 
 <script src="perf.js"></script>
@@ -225,7 +801,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 
   // ---------- EDTO state (times are never restored: they go stale) ----------
   const NOT_SAVED = ["nowUtc", "etaUtc"];
-  const state = Object.assign({ variant: "737-800", calc: "alt", antiIce: "off", windDir: "HW", icing: false }, store.get("edto.inputs") || {});
+  const state = Object.assign({ variant: "737-800", calc: "alt", windDir: "HW", icing: false }, store.get("edto.inputs") || {});
   function save(){ const o = {}; for (const k in state) if (!NOT_SAVED.includes(k)) o[k] = state[k]; store.set("edto.inputs", o); }
 
   const fields = document.querySelectorAll("[data-k]");
@@ -278,18 +854,21 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
     $("gwBtn").disabled = etpGw == null;
     $("gwBtn").title = etpGw == null ? "Fill in Altitude capability first" : kg(etpGw);
 
-    // altitude capability
+    msg($("rMsg"), ok ? w.warning : null);
+
+    // engine inop altitude at point: both strategies, all three anti-ice cases
     const isa = num(state.isa);
-    let lrc = null, k310 = null, aMsg = ok ? w.warning : null;
-    if (ok && data && Number.isFinite(isa)) {
-      const t = w.grossWeight / 1000;
-      lrc = PERF.altitudeCapability(data.altitudeCapability, "lrc", t, isa, state.antiIce);
-      k310 = PERF.altitudeCapability(data.altitudeCapability, "kias310", t, isa, state.antiIce);
-      if (lrc == null) aMsg = "Outside chart: gross weight 40,000–85,000 kg and ISA up to +20 °C.";
-    } else if (ok && data) aMsg = aMsg || "Enter ISA deviation for altitude capability.";
-    set("rLrc", lrc == null ? "—" : ft(lrc));
-    set("r310", k310 == null ? "—" : ft(k310));
-    msg($("rMsg"), aMsg);
+    const CELLS = [["lrc", "off", "aLrcOff"], ["lrc", "engine", "aLrcEng"], ["lrc", "engineWing", "aLrcWing"],
+                   ["kias310", "off", "a310Off"], ["kias310", "engine", "a310Eng"], ["kias310", "engineWing", "a310Wing"]];
+    let aMsg = null, any = false;
+    CELLS.forEach(([strat, ai, id]) => {
+      const v = ok && data && Number.isFinite(isa) ? PERF.altitudeCapability(data.altitudeCapability, strat, w.grossWeight / 1000, isa, ai) : null;
+      if (v != null) any = true;
+      set(id, v == null ? "--" : ft(v));
+    });
+    if (ok && data && !Number.isFinite(isa)) aMsg = "Enter ISA deviation.";
+    else if (ok && data && !any) aMsg = "Outside chart: gross weight 40,000–85,000 kg and ISA up to +20 °C.";
+    msg($("aMsg"), aMsg);
 
     // critical fuel
     const blank = () => ["cNil", "cWind", "cIsa", "cIce", "cTotal"].forEach((id) => set(id, "—"));
@@ -315,7 +894,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
   syncFields(); calc();
 
   // ---------- tabs (bottom bar) ----------
-  const TABS = { crz: "CRZ", edto: "EDTO", app: "APP" };
+  const TABS = { crz: "CRZ", edto: "EDTO", ref: "REF", oma: "OMA", qrh: "QRH" };
   const tabScroll = {};
   let curTab = null;
   function showTab(name){
@@ -327,12 +906,15 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
     curTab = name; store.set("edto.tab", name);
     try { history.replaceState(null, "", "#" + name); } catch (e) {}
     window.scrollTo(0, tabScroll[name] || 0);
+    window.dispatchEvent(new CustomEvent("tabshow", { detail: name }));
   }
   document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("click", () => {
     if (b.dataset.tab === curTab) window.scrollTo({ top: 0, behavior: "smooth" }); else showTab(b.dataset.tab);
   }));
   window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS[h] && h !== curTab) showTab(h); });
   showTab(location.hash.slice(1) || store.get("edto.tab") || "edto");
+  // used by the CRZ tab script below
+  window.APP = { $, store, showTab, setEdto(o){ Object.assign(state, o); syncFields(); save(); calc(); } };
 
   // ---------- settings: appearance ----------
   $("setOpen").addEventListener("click", () => $("setDlg").showModal());
@@ -348,7 +930,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 
   // ---------- version and update ----------
   // Keep APP_VERSION equal to version.json; bump both (and CACHE in sw.js) on each release.
-  const APP_VERSION = "1-02-26";
+  const APP_VERSION = "1-11-27";
   $("verTxt").textContent = APP_VERSION;
   async function checkUpdate(manual){
     if (!navigator.onLine) { if (manual) $("updMsg").textContent = "Offline: connect to check."; return; }
@@ -382,6 +964,678 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
+})();
+</script>
+<script src="wmm.js"></script>
+<script src="airports.js"></script>
+<script src="world50.js"></script>
+<script src="crz.js"></script>
+<script>
+// ================= CRZ tab: OFP import, map, EDTO alternate renomination =================
+(function(){
+  "use strict";
+  const { $, store, showTab, setEdto } = window.APP;
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pad = (n, w = 2) => String(n).padStart(w, "0");
+  const hdg = (d) => (Math.round(CRZ.norm360(d)) % 360) || 360;
+  const deg = (d) => pad(hdg(d), 3) + "°";
+  const nm = (d) => Math.round(d).toLocaleString("en-US") + " NM";
+  const hmm = (min) => { const t = Math.round(min); return Math.floor(t / 60) + ":" + pad(t % 60); };
+  const minTxt = (min) => (min >= 60 ? hmm(min) + " h" : Math.round(min) + " min");
+  const num = (v) => (v === "" || v == null ? NaN : Number(v));
+  // Maximum diversion distance, still air ISA, M0.79/310 kt at 75,000 / 79,000 kg (OM-A Table 8.5.6.6(1), Rev 10.3.0)
+  const DIV_NM = { 60: 420, 90: 620, 120: 820, 180: 1200 };
+
+  // ---------- airports ----------
+  let aptIndex = null;
+  function airport(code) {
+    code = String(code || "").trim().toUpperCase();
+    if (!code) return null;
+    if (!aptIndex) {
+      aptIndex = new Map();
+      for (const row of (window.SolatAirports ? window.SolatAirports.data : "").split("\n")) {
+        const f = row.split("|");
+        if (f.length < 7) continue;
+        const a = { id: f[0] || f[1], icao: f[0], iata: f[1], name: f[2], city: f[3], country: f[4], lat: +f[5], lon: +f[6] };
+        if (f[0]) aptIndex.set(f[0], a);
+        if (!aptIndex.has(f[1])) aptIndex.set(f[1], a);
+      }
+    }
+    return aptIndex.get(code) || null;
+  }
+  const aptLabel = (a) => (a ? esc(a.name + (a.city && !a.name.includes(a.city) ? ", " + a.city : "")) : "");
+  const magVar = (lat, lon) => { try { return window.SolatWMM.declination(lat, lon, 0, window.SolatWMM.yearOf(Date.now())); } catch (e) { return 0; } };
+
+  // ---------- state ----------
+  let ofp = store.get("crz.ofp");
+  let ren = store.get("crz.ren") || {};
+  let route = null, calc = null;       // calc = current renomination result plus derived points
+
+  // ---------- OFP import (PDF text layer or pasted text) ----------
+  const loadScript = (src) => new Promise((ok, bad) => {
+    const el = document.createElement("script"); el.src = src; el.onload = ok;
+    el.onerror = () => bad(new Error("Could not load " + src)); document.head.appendChild(el);
+  });
+  async function pdfToText(file) {
+    if (!window.pdfjsLib) {
+      // worker code runs on the main thread: works offline
+      await loadScript("vendor/pdfjs/pdf.worker.min.js");
+      await loadScript("vendor/pdfjs/pdf.min.js");
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdfjs/pdf.worker.min.js";
+    }
+    const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    const all = [];
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const tc = await (await pdf.getPage(n)).getTextContent();
+      all.push(tc.items.filter((it) => it.str && it.str.trim() !== ""));
+    }
+    // rebuild text lines from positioned glyph runs (OFPs use a fixed-width font)
+    const flat = all.flat();
+    const widths = flat.map((it) => it.width / it.str.length).filter((w) => w > 0).sort((a, b) => a - b);
+    const cw = widths.length ? widths[Math.floor(widths.length / 2)] : 6;
+    const x0 = flat.reduce((m, it) => Math.min(m, it.transform[4]), Infinity);
+    const pages = [];
+    for (const items of all) {
+      const rows = new Map();
+      for (const it of items) {
+        const y = Math.round(it.transform[5]);
+        let key = [...rows.keys()].find((k) => Math.abs(k - y) <= 2);
+        if (key === undefined) { key = y; rows.set(key, []); }
+        rows.get(key).push(it);
+      }
+      const lines = [...rows.entries()].sort((a, b) => b[0] - a[0]).map(([, its]) => {
+        its.sort((a, b) => a.transform[4] - b.transform[4]);
+        let line = "";
+        for (const it of its) {
+          const col = Math.round((it.transform[4] - x0) / cw);
+          line += line.length < col ? " ".repeat(col - line.length) : (line && !line.endsWith(" ") ? " " : "");
+          line += it.str;
+        }
+        return line;
+      });
+      pages.push(lines.join("\n"));
+    }
+    return pages.join("\n\n");
+  }
+  function ofpMsg(t, bad) { const el = $("ofpMsg"); el.hidden = !t; el.textContent = t || ""; el.style.color = bad ? "var(--err)" : ""; }
+  function loadText(text) {
+    const o = CRZ.parseOFP(text);
+    if (o.points.length < 2) { ofpMsg("Could not read a route from this: no COORDINATES INFORMATION section found. Is it the full OFP?", true); return false; }
+    ofp = o; ren = {};
+    store.set("crz.ofp", ofp); store.set("crz.ren", ren);
+    ofpMsg(o.warnings.length ? "Read with warnings: " + o.warnings.join(" ") : "");
+    view = null;
+    renderAll();
+    return true;
+  }
+  $("ofpPick").addEventListener("click", () => $("ofpFile").click());
+  $("ofpFile").addEventListener("change", async () => {
+    const f = $("ofpFile").files[0]; if (!f) return;
+    ofpMsg("Reading " + f.name + "…");
+    try {
+      const isPdf = /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name);
+      loadText(isPdf ? await pdfToText(f) : await f.text());
+    } catch (e) { ofpMsg("Could not read the file (" + (e && e.message || e) + "). Try Paste text.", true); }
+    $("ofpFile").value = "";
+  });
+  $("ofpPasteBtn").addEventListener("click", () => { $("ofpPaste").hidden = false; $("ofpText").focus(); });
+  $("ofpPasteX").addEventListener("click", () => { $("ofpPaste").hidden = true; });
+  $("ofpRead").addEventListener("click", () => { if (loadText($("ofpText").value)) { $("ofpPaste").hidden = true; $("ofpText").value = ""; } });
+  const nameOf = (id, code, a) => { const el = $(id); el.className = "aptname" + (code && !a ? " bad" : ""); el.innerHTML = a ? aptLabel(a) : code ? (code.length < 3 ? "" : "Not in the airport list") : ""; };
+  function onPair(e) {
+    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); e.target.value = v;
+    const c1 = $("pairDep").value, c2 = $("pairDst").value;
+    const a1 = airport(c1), a2 = airport(c2);
+    nameOf("pairDepName", c1, a1); nameOf("pairDstName", c2, a2);
+    if (!a1 || !a2) {
+      if (ofp && ofp.manual) { ofp = null; ren = {}; store.set("crz.ofp", null); store.set("crz.ren", ren); renderAll(); }
+      ofpMsg("");
+      return;
+    }
+    const gc = CRZ.directRoute ? CRZ.directRoute(a1, a2) : (() => {
+      const d = CRZ.dist(a1, a2); if (d < 1) return null;
+      const b = CRZ.bearing(a1, a2), n = Math.max(1, Math.ceil(d / 50));
+      const pts = [{ name: a1.id, lat: a1.lat, lon: a1.lon, pseudo: false }];
+      for (let i = 1; i < n; i++) { const p = CRZ.dest(a1, b, (d * i) / n); pts.push({ name: "GC" + i, lat: p.lat, lon: p.lon, pseudo: true }); }
+      pts.push({ name: a2.id, lat: a2.lat, lon: a2.lon, pseudo: false });
+      return { pts, dist: d, bearing: b };
+    })();
+    if (!gc) { ofpMsg("Choose two different airports.", true); return; }
+    ofpMsg("");
+    ofp = {
+      manual: true,
+      depIcao: a1.id, depIata: a1.iata || "",
+      destIcao: a2.id, destIata: a2.iata || "",
+      grdDist: Math.round(gc.dist),
+      initTrackT: gc.bearing,
+      points: gc.pts,
+      edto: { alternates: [a1.id, a2.id], points: [], ruleMin: 120 },
+      winds: {},
+      warnings: [],
+    };
+    ren = {};
+    store.set("crz.ofp", ofp); store.set("crz.ren", ren);
+    view = null;
+    renderAll();
+  }
+  $("pairDep").addEventListener("input", onPair);
+  $("pairDst").addEventListener("input", onPair);
+  if (ofp && ofp.manual) {
+    $("pairDep").value = ofp.depIcao || ""; $("pairDst").value = ofp.destIcao || "";
+    nameOf("pairDepName", ofp.depIcao, airport(ofp.depIcao));
+    nameOf("pairDstName", ofp.destIcao, airport(ofp.destIcao));
+  }
+  $("ofpClear").addEventListener("click", () => {
+    ofp = null; ren = {}; store.set("crz.ofp", null); store.set("crz.ren", ren);
+    $("pairDep").value = ""; $("pairDst").value = "";
+    nameOf("pairDepName", "", null); nameOf("pairDstName", "", null);
+    ofpMsg(""); renderAll();
+  });
+
+  // ---------- flight plan summary ----------
+  function renderSummary() {
+    const has = !!ofp, manual = !!(ofp && ofp.manual);
+    $("fpEmpty").hidden = has; $("fpBody").hidden = !has; $("ofpClear").hidden = !has;
+    $("pairBox").hidden = has && !manual;
+    ["mapSec", "renSec", "edtoPtSec", "wpSec"].forEach((id) => { $(id).hidden = !has; });
+    if (!has) return;
+    const o = ofp, dep = airport(o.depIcao), dst = airport(o.destIcao), e = o.edto || {};
+    if (manual) {
+      $("edtoPtSec").hidden = true; $("wpSec").hidden = true;
+      const trkT = o.initTrackT != null ? o.initTrackT : (dep && dst ? CRZ.bearing(dep, dst) : null);
+      const trkM = trkT != null && dep ? CRZ.norm360(trkT - magVar(dep.lat, dep.lon)) : null;
+      const rows = [];
+      const row = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
+      row("Distance", o.grdDist ? `<span class="mono">${o.grdDist.toLocaleString("en-US")}</span> NM great circle` : "");
+      row("Initial track", trkM != null ? `<span class="mono">${deg(trkM)}</span> <span class="s">(${deg(trkT)} true)</span>` : "");
+      $("fpBody").innerHTML = `<dl class="kv" style="margin-top:8px">${rows.join("")}</dl>`;
+      return;
+    }
+    const mo = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const rows = [];
+    const row = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
+    row("Departure", `<b class="mono">${esc(o.depIcao)}${o.depIata ? "/" + esc(o.depIata) : ""}</b> ${aptLabel(dep)}${o.std ? ` · STD <span class="mono">${esc(o.std)}</span> UTC` : ""}`);
+    row("Destination", `<b class="mono">${esc(o.destIcao)}${o.destIata ? "/" + esc(o.destIata) : ""}</b> ${aptLabel(dst)}${o.sta ? ` · STA <span class="mono">${esc(o.sta)}</span> UTC` : ""}`);
+    row("Cruise level", o.cruiseFL != null ? `<b class="mono">FL${o.cruiseFL}</b>${o.levelPlan ? ` <span class="s">(${esc(o.levelPlan)})</span>` : ""}` : "");
+    row("Speed", [o.mach ? `<b class="mono">M${o.mach.toFixed(2).slice(1)}</b>` : "", o.costIndex != null ? `CI ${o.costIndex}` : "", o.cruiseTas ? `TAS <span class="mono">${o.cruiseTas}</span> kt` : "", o.speedPlan ? `<span class="s">(${esc(o.speedPlan)})</span>` : ""].filter(Boolean).join(" · "));
+    row("Distance", [o.grdDist ? `<span class="mono">${o.grdDist}</span> NM ground` : "", o.airDist ? `<span class="mono">${o.airDist}</span> NM air` : "", o.fltMin ? `flight time <span class="mono">${hmm(o.fltMin)}</span>` : ""].filter(Boolean).join(" · "));
+    row("Wind / ISA", [o.avgWc != null ? `average ${Math.abs(o.avgWc)} kt ${o.avgWc < 0 ? "headwind" : "tailwind"}` : "", o.avgIsa != null ? `ISA ${o.avgIsa >= 0 ? "+" : "−"}${Math.abs(o.avgIsa)} °C` : ""].filter(Boolean).join(" · "));
+    row("Route", o.route ? `<span class="mono" style="font-size:13px">${esc(o.route)}</span>` : "");
+    row("Waypoints", `${o.points.filter((p) => !p.pseudo).length} fixes, ${o.points.filter((p) => p.pseudo).length} plan points`);
+    const eas = (e.alternates || []).map((c) => `<b class="mono">${esc(c)}</b> ${aptLabel(airport(c))}`).join("<br>");
+    row("EDTO alternates", eas ? eas : (e.planned === false ? "Not an EDTO flight" : `<span class="pill warn">none found</span>`));
+    row("EDTO rule", e.ruleMin ? `<span class="mono">${e.ruleMin}</span> min${e.oneHourNm ? ` · 60 min = <span class="mono">${e.oneHourNm}</span> NM` : ""}` : "");
+    row("En-route adequate", e.adequate && e.adequate.length ? `<span class="mono" style="font-size:13px">${e.adequate.map(esc).join(" ")}</span>` : "");
+    $("fpBody").innerHTML =
+      `<p class="fphead">${esc(o.flight || "Flight")} · ${esc(o.depIcao)} → ${esc(o.destIcao)}<small>${o.date ? `${pad(o.date.d)} ${mo[o.date.mo]} ${o.date.y}` : ""}${o.acType ? " · " + esc(o.acType) : ""}</small></p><dl class="kv">${rows.join("")}</dl>`;
+
+    // EDTO points table
+    const pts = e.points || [];
+    $("edtoPtSec").hidden = !pts.length;
+    if (pts.length) {
+      $("edtoPtTbl").innerHTML = "<thead><tr><th>Point</th><th>Airports</th><th>ELTM</th><th>Dist NM</th><th>Crit fuel</th><th>FOB</th><th>Margin</th></tr></thead><tbody>" +
+        pts.map((p) => {
+          const mg = Math.round((p.fob - p.critFuel) * 10) / 10;
+          return `<tr><td><b>${esc(p.name)}</b></td><td class="mono">${p.airports.map(esc).join("/")}</td><td class="mono">${hmm(p.eltm)}</td><td class="mono">${p.dist.join("/")}</td><td class="mono">${p.critFuel.toFixed(1)}</td><td class="mono">${p.fob.toFixed(1)}</td><td class="mono" style="color:${mg < 0 ? "var(--err)" : "inherit"}">${mg >= 0 ? "+" : "−"}${Math.abs(mg).toFixed(1)}</td></tr>`;
+        }).join("") + "</tbody>";
+      $("edtoPtHint").textContent = "As planned by dispatch, fuel in 1000 kg. These points are only valid for the OFP's alternates" +
+        (e.speeds ? ". Speed schedules: " + e.speeds.map((s) => `${s.code} = ${s.what} ${s.speed}`).join(", ") + "." : ".");
+    }
+    // waypoints table
+    $("wpSum").textContent = `Waypoints (${o.points.length})`;
+    $("wpTbl").innerHTML = "<thead><tr><th>WPT</th><th>AWY</th><th>FL</th><th>ELTM</th><th>Dist</th><th>W/V</th><th>EFOB</th><th>Position</th></tr></thead><tbody>" +
+      o.points.map((p) => `<tr class="${p.pseudo ? "ps" : ""}"><td><b>${esc(p.name)}</b></td><td class="mono">${esc(p.awy || "")}</td><td class="mono">${esc(p.fl || "")}</td><td class="mono">${p.eltm != null ? hmm(p.eltm) : ""}</td><td class="mono">${p.dist ?? ""}</td><td class="mono">${p.windDir != null ? pad(p.windDir, 3) + "/" + pad(p.windKt, 3) : ""}</td><td class="mono">${p.efob ?? ""}</td><td class="mono">${CRZ.fmtLatLon(p)}</td></tr>`).join("") + "</tbody>";
+  }
+
+  // ---------- renomination ----------
+  const oneHourNm = () => (ofp && ofp.edto && ofp.edto.oneHourNm) || DIV_NM[60];
+  const maxDivNm = () => DIV_NM[(ofp && ofp.edto && ofp.edto.ruleMin) || 120] || null;
+  const ofpAlts = () => ((ofp && ofp.edto && ofp.edto.alternates) || []);
+  function renDefaults() {
+    const a = ofpAlts();
+    if (ren.ea1 == null) ren.ea1 = a[0] || "";
+    if (ren.ea2 == null) ren.ea2 = a[1] || "";
+  }
+  const unchanged = () => { const a = ofpAlts(); return a.length >= 2 && ren.ea1 === a[0] && ren.ea2 === a[1]; };
+  /** Every plan point that has a wind column in the OFP, nearest to p first. */
+  function windPoints(p) {
+    const out = [];
+    for (const w of ofp.points) {
+      const rows = ofp.winds && ofp.winds[w.name];
+      if (rows && rows.length) out.push({ d: CRZ.dist(p, w), name: w.name, rows, tas: w.tas });
+    }
+    return out.sort((x, y) => x.d - y.d);
+  }
+  /** TAS to use with one wind row: the planned Mach at that level's forecast temperature; the OFP's diversion speed low down. */
+  function tasFor(w, pt) {
+    if (w.fl <= 150 && ofp.edto && ofp.edto.divTas) return ofp.edto.divTas;
+    if (ofp.mach && Number.isFinite(w.oat)) return Math.round(ofp.mach * 38.967854 * Math.sqrt(273.15 + w.oat));
+    return (pt && pt.tas) || ofp.cruiseTas || 480;
+  }
+  function compute() {
+    calc = null; route = null;
+    if (!ofp) return;
+    route = CRZ.makeRoute(ofp.points);
+    renDefaults();
+    const a1 = airport(ren.ea1), a2 = airport(ren.ea2);
+    calc = { a1, a2, R: oneHourNm() };
+    if (!a1 || !a2) return;
+    const opt = { magVar };
+    let r = CRZ.renominate(route, a1, a2, Object.assign({ windKt: 0 }, opt));
+    calc.r = r;
+    if (r.error) return;
+    // wind and TAS: from the OFP at the point nearest the EDP, unless typed in
+    const wpts = windPoints(r.edp);
+    const near = wpts.find((w) => w.name === ren.windPt) || wpts[0] || null;
+    calc.windPts = wpts; calc.near = near; calc.nearest = wpts[0] || null;
+    if (near) {
+      const cruiseRow = near.rows.find((w) => w.cruise) || near.rows.reduce((x, y) => (Math.abs(y.fl - (ofp.cruiseFL || 350)) < Math.abs(x.fl - (ofp.cruiseFL || 350)) ? y : x));
+      calc.cruiseLevel = cruiseRow.fl;
+      if (!near.rows.some((w) => w.fl === ren.level)) ren.level = cruiseRow.fl;
+      if (!ren.manual) {
+        const w = near.rows.find((x) => x.fl === ren.level);
+        ren.windDir = w.dir; ren.windKt = w.kt;
+        ren.tas = tasFor(w, near);
+      }
+    } else if (!ren.manual && ren.tas == null) { ren.windDir = 0; ren.windKt = 0; ren.tas = ofp.cruiseTas || 480; }
+    r = CRZ.renominate(route, a1, a2, Object.assign({ tas: num(ren.tas), windDir: num(ren.windDir), windKt: num(ren.windKt) }, opt));
+    calc.r = r;
+    // which alternate is behind us at the EDP, and the entry / exit points of the 60 min rings
+    const s = r.edp.s, back = route.at(Math.max(0, s - 5)), fwd = route.at(Math.min(route.total, s + 5));
+    const firstIsBehind = CRZ.dist(back, a1) <= CRZ.dist(fwd, a1);
+    calc.behind = firstIsBehind ? a1 : a2; calc.ahead = firstIsBehind ? a2 : a1;
+    if (r.edpDist1 > calc.R) {
+      const out = CRZ.ringCrossings(route, calc.behind, calc.R).filter((x) => x.exit && x.s < s);
+      const inn = CRZ.ringCrossings(route, calc.ahead, calc.R).filter((x) => !x.exit && x.s > s);
+      calc.eep = out.length ? out[out.length - 1] : null;
+      calc.exp = inn.length ? inn[0] : null;
+    } else calc.noSegment = true;
+  }
+
+  function renderRen() {
+    if (!ofp) return;
+    $("ea1").value = ren.ea1 || ""; $("ea2").value = ren.ea2 || "";
+    nameOf("ea1Name", ren.ea1, calc && calc.a1); nameOf("ea2Name", ren.ea2, calc && calc.a2);
+    $("renReset").hidden = unchanged() && !ren.manual && !ren.eta1 && !ren.eta2 && !ren.windPt && (!calc || ren.level === calc.cruiseLevel);
+    const el = $("renOut");
+    if (!calc || !calc.a1 || !calc.a2) { el.innerHTML = `<div class="hint">Enter two airports (ICAO or IATA code) to see the 60 minute rings and how to find the new ETP.</div>`; return; }
+    const r = calc.r, a1 = calc.a1, a2 = calc.a2;
+    if (r.error) {
+      if (r.mid) {
+        const closer = CRZ.dist(route.at(0), a1) < CRZ.dist(route.at(0), a2) ? a1.id : a2.id;
+        const halfN = Math.round(r.half);
+        const K = (s) => `<span class="key">${esc(s)}</span>`, V = (s) => `<span class="val">${s}</span>`;
+        el.innerHTML = `<div class="note"><b>Not on this route.</b> Every point on the loaded route is closer to ${esc(closer)}, so the 90° bisector between ${esc(a1.id)} and ${esc(a2.id)} never crosses the route. Showing the direct-track halfway point (EDP) instead.</div>` +
+          `<div class="resbox">Direct EDP ${V(CRZ.fmtLatLon(r.mid))}<br>${V(nm(r.half))} to each airport · track ${V(deg(r.trackM))} <span class="s">(${deg(r.trackT)} true)</span> · total ${V(nm(r.trackDist))}<br><span class="s">FMC halfway fix:</span> ${K(a2.id + "/-" + halfN)}</div>`;
+      } else {
+        el.innerHTML = `<div class="note bad"><b>No EDP.</b> ${esc(r.error)}</div>`;
+      }
+      return;
+    }
+    const K = (s) => `<span class="key">${esc(s)}</span>`, V = (s) => `<span class="val">${s}</span>`;
+    const f1 = a2.id.slice(0, 3) + "01", f2 = a2.id.slice(0, 3) + "02", f3 = a2.id.slice(0, 3) + "03";
+    const halfN = Math.round(r.half), radDist = Math.round(r.radialDist);
+    const trackM = hdg(r.trackM);
+    const typed = hdg(trackM + (r.side === "right" ? 90 : -90));   // what the handout arithmetic gives
+    const exact = hdg(r.radialM);
+    const legTxt = (l) => (l.before && l.after ? `${K(l.before.name)} and ${K(l.after.name)}` : "the two waypoints either side");
+    const max = maxDivNm(), rule = (ofp.edto && ofp.edto.ruleMin) || 120;
+    const lvlOpts = calc.near ? calc.near.rows.slice().sort((x, y) => y.fl - x.fl).map((w) =>
+      `<option value="${w.fl}"${w.fl === ren.level ? " selected" : ""}>FL${pad(w.fl, 3)} · ${pad(w.dir, 3)}/${pad(w.kt, 3)} · TAS ${tasFor(w, calc.near)}${w.fl === calc.cruiseLevel ? " · plan" : ""}</option>`).join("") : "";
+    const ptOpts = (calc.windPts || []).slice().sort((x, y) => ofp.points.findIndex((p) => p.name === x.name) - ofp.points.findIndex((p) => p.name === y.name)).map((w) =>
+      `<option value="${esc(w.name)}"${calc.near && w.name === calc.near.name ? " selected" : ""}>${esc(w.name)}${calc.nearest && w.name === calc.nearest.name ? " · nearest" : ""} · ${Math.round(w.d)} NM</option>`).join("");
+
+    let h = "";
+    // headline
+    if (calc.noSegment) h += `<div class="note"><b>No EDTO segment between these two.</b> The route stays within 60 min (${calc.R} NM) of ${esc(a1.id)} or ${esc(a2.id)}: at the equal-distance point each is ${nm(r.edpDist1)} away.</div>`;
+    if (max && r.edpDist1 > max) h += `<div class="note bad"><b>Outside the ${rule} min area.</b> The equal-distance point is ${nm(r.edpDist1)} from both airports; the maximum diversion distance is ${nm(max)} (still air, ISA). These two cannot cover this route.</div>`;
+    else if (max && r.edpDist1 > calc.R) h += `<div class="hint">Farthest point from both airports: ${nm(r.edpDist1)}, inside the ${rule} min limit of ${nm(max)} (still air, ISA).</div>`;
+
+    h += `<div class="ptsbox" id="ptsOut"></div>`;
+    h += `<ol class="steps">`;
+    h += `<li class="h"><h4>Step 1 · Suitability</h4></li>`;
+    h += `<li><div>Check the latest weather and NOTAMs for ${K(a1.id)} and ${K(a2.id)} before using them. The app cannot check this.</div></li>`;
+
+    h += `<li class="h"><h4>Step 2 · Equal distance point (EDP)</h4></li>`;
+    h += `<li><div><b>LEGS</b>, last page: enter ${K(a1.id)} then ${K(a2.id)} below it. <span class="caution">Do not execute.</span> Note the track and distance from ${esc(a1.id)} to ${esc(a2.id)}: expect about ${V(deg(r.trackM))} / ${V(nm(r.trackDist))}. <span class="s">(${deg(r.trackT)} true)</span></div></li>`;
+    h += `<li><div>Half the distance: ${Math.round(r.trackDist)} ÷ 2 = ${V(halfN + " NM")}. Type ${K(a2.id + "/-" + halfN)} and put it between ${esc(a1.id)} and ${esc(a2.id)}. This makes the halfway fix, named like ${K(f1)}. <span class="s">(${CRZ.fmtLatLon(r.mid)})</span></div></li>`;
+    h += `<li><div>Line-select ${K(f1)} into the <b>FIX</b> page (1L), then erase ${esc(a1.id)} and ${esc(a2.id)} from LEGS.</div></li>`;
+    h += `<li><div>The route is on the <b>${r.side}</b> of the ${esc(a1.id)}→${esc(a2.id)} track, so ${r.side === "right" ? "add" : "subtract"} 90°: ${pad(trackM, 3)} ${r.side === "right" ? "+" : "−"} 90 = ${V(pad(typed, 3) + "°")}. Enter ${K(pad(typed, 3))} on a FIX line. A dashed line appears, crossing the route about ${V(radDist + " NM")} from ${esc(f1)}.${Math.abs(((typed - exact + 540) % 360) - 180) >= 2 ? ` <span class="s">(the exact 90° line at the fix is ${pad(exact, 3)}°; the track turns slightly along a long great circle)</span>` : ""}</div></li>`;
+    h += `<li><div>Line-select the radial line to copy it to the scratchpad, go to <b>LEGS</b> and put it between ${legTxt(r.edpLeg)}. This makes ${K(f2)}: the <b>EDP</b>.<div class="resbox">EDP ${V(CRZ.fmtLatLon(r.edp))}<br>${V(nm(r.edpDist1))} to each airport</div></div></li>`;
+
+    h += `<li class="h"><h4>Step 3 · Equal time point (ETP)</h4></li>`;
+    h += `<li><div><b>Get the ETA to each alternate from the EDP.</b>
+      <ul class="acts">
+        <li><b>Check</b> the winds are in <b>RTE DATA</b>.</li>
+        <li><b>Put</b> ${K(a1.id)} under ${K(f2)}. <span class="caution">Do not execute.</span></li>
+        <li><b>Read</b> its ETA on RTE DATA, then <b>ERASE</b>.</li>
+        <li><b>Repeat</b> with ${K(a2.id)}.</li>
+        <li><b>Enter</b> the two ETAs:</li>
+      </ul>
+      <div class="r2"><div><label for="eta1">FMC ETA ${esc(a1.id)}</label><input id="eta1" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta1 || "")}"></div><div><label for="eta2">FMC ETA ${esc(a2.id)}</label><input id="eta2" class="mono" inputmode="numeric" maxlength="5" placeholder="HHMM" value="${esc(ren.eta2 || "")}"></div></div>
+      <div id="etaOut"></div></div></li>`;
+    h += `<li><div>Until you have the FMC ETAs, this is the app's estimate, using one wind for both diversions:
+      <div class="r2"><div><label for="rPt">OFP wind at</label><select id="rPt"${ptOpts ? "" : " disabled"}>${ptOpts || "<option>no wind table</option>"}</select></div>
+      <div><label for="rLvl">Your level</label><select id="rLvl"${lvlOpts ? "" : " disabled"}>${lvlOpts || "<option>no wind table</option>"}</select></div></div>
+      <div class="r2"><div><label for="rWd">Wind °T / kt</label><div class="inbtn"><input id="rWd" class="mono" inputmode="numeric" maxlength="3" value="${Number.isFinite(num(ren.windDir)) ? pad(num(ren.windDir), 3) : ""}" aria-label="Wind direction"><input id="rWs" class="mono" inputmode="numeric" maxlength="3" value="${ren.windKt ?? ""}" aria-label="Wind speed" style="width:64px"></div></div><div><label for="rTas">TAS kt</label><input id="rTas" class="mono" inputmode="numeric" maxlength="3" value="${ren.tas ?? ""}"></div></div>
+      ${calc.near ? `<div class="s" style="margin-top:4px">Every level the OFP forecasts at ${esc(calc.near.name)} is listed. Pick the one nearest the level you are actually flying; the wind, the TAS (M${ofp.mach ? ofp.mach.toFixed(2).slice(1) : ".79"} at that level's forecast temperature) and the ETP follow. For a level in between, type the wind and TAS yourself.</div>` : ""}
+      <div id="estOut"></div></div></li>`;
+    h += `</ol>`;
+    h += `<div class="note"><b>Check which wind you use.</b> The FMC ETAs are at the level and speed you are flying. The OFP's own ETP is for the critical case: one engine out and depressurised, about ${ofp.edto && ofp.edto.divTas ? ofp.edto.divTas + " kt TAS" : "310 KIAS"} near FL100, where the wind can be the opposite of the cruise wind. Pick the FL100 wind above to see that case.</div>`;
+    h += `<div class="btnrow"><button type="button" id="toCf">Check critical fuel for the ETP</button></div><div class="hint" id="toCfHint"></div>`;
+    el.innerHTML = h;
+
+    // live parts
+    // coordinates of the new EDTO points, in route order
+    const points = () => {
+      const rr = calc.r, rows = [];
+      const leg = (p) => { const l = CRZ.legAt(route, p.s); return l.before && l.after ? esc(l.before.name) + " – " + esc(l.after.name) : ""; };
+      const add = (name, p, what) => rows.push({ s: p ? p.s : Infinity, h: `<tr><td><b>${name}</b></td><td class="mono pos">${p ? CRZ.fmtLatLon(p) : "—"}</td><td class="mono">${p ? leg(p) : ""}</td><td>${what}</td></tr>` });
+      if (!calc.noSegment) add("EEP", calc.eep, calc.eep ? `${calc.R} NM from ${esc(calc.behind.id)}` : "route starts outside the ring");
+      add("EDP", rr.edp, `${nm(rr.edpDist1)} to each`);
+      if (rr.etp) add("ETP", rr.etp, `${esc(a1.id)} ${nm(rr.etpDist1)} · ${esc(a2.id)} ${nm(rr.etpDist2)}`);
+      if (!calc.noSegment) add("EXP", calc.exp, calc.exp ? `${calc.R} NM from ${esc(calc.ahead.id)}` : "route ends outside the ring");
+      rows.sort((x, y) => x.s - y.s);
+      $("ptsOut").innerHTML = `<h4>${unchanged() ? "EDTO points" : "New EDTO points"} · ${esc(a1.id)} / ${esc(a2.id)}</h4><div class="tablewrap"><table><thead><tr><th>Point</th><th>Position</th><th>Between</th><th>Distance</th></tr></thead><tbody>${rows.map((x) => x.h).join("")}</tbody></table></div>` +
+        `<div class="s" style="margin-top:6px">${calc.noSegment ? "No EEP or EXP: the route stays inside the 60 min rings." : `EEP and EXP are still-air ${calc.R} NM ring crossings (WGS84).`}${rr.etp ? " The ETP is the app's estimate with the wind and TAS set in step 3; the FMC ETAs decide the real one." : ""}</div>`;
+    };
+    const estimate = () => {
+      const o = $("estOut"), rr = calc.r;
+      points();
+      if (rr.etpError || !rr.etp) { o.innerHTML = `<div class="note bad"><b>No ETP.</b> ${esc(rr.etpError || "")}</div>`; return; }
+      const longer = rr.dtMin > 0 ? a1 : a2, dir = rr.shiftDir < 0 ? "back" : "ahead", sh = Math.round(Math.abs(rr.etpShift)), fsh = Math.round(rr.formulaShift);
+      const still = Math.abs(rr.dtMin) < 0.5;
+      o.innerHTML = `<div class="resbox">Time from EDP: ${esc(a1.id)} ${V(minTxt(rr.t1))}, ${esc(a2.id)} ${V(minTxt(rr.t2))}` +
+        (still ? `<br>Less than half a minute apart: the EDP is the ETP.` :
+          `<br>Difference ${V(Math.abs(rr.dtMin).toFixed(1) + " min")}; formula ${Math.abs(rr.dtMin).toFixed(1)} ÷ 2 × ${rr.nmPerMin.toFixed(1)} NM/min = ${V(Math.round(rr.formulaShift) + " NM")}` +
+          `<br>Move <b>into the wind</b>: toward ${esc(longer.id)}, which takes longer, so ${dir} along the route. Type ${K(f2 + "/" + (rr.shiftDir < 0 ? "-" : "") + fsh)} ${rr.shiftDir < 0 ? "before" : "after"} ${esc(f2)} to make ${K(f3)}, then delete ${esc(f2)}.`) +
+        `<br>Equal time works out at ${V(CRZ.fmtLatLon(rr.etp))}${still ? "" : `, ${V(sh + " NM")} ${dir} of the EDP`}<br>${esc(a1.id)} ${V(nm(rr.etpDist1))} · ${esc(a2.id)} ${V(nm(rr.etpDist2))} · ${V(minTxt(rr.etpTime))} to either` +
+        `</div><div class="s" style="margin-top:6px">Then repeat the ETA check from ${esc(f3)}: both ETAs should match. If not, move it 1 or 2 NM more.</div>`;
+      $("toCfHint").textContent = `Opens EDTO › Critical fuel with the longer distance from the ETP (${nm(Math.max(rr.etpDist1, rr.etpDist2))}). Set the weight, wind and ISA there.`;
+    };
+    const etaCalc = () => {
+      // FMC ETAs are at the level being flown: use that level's TAS, or the planned cruise TAS when a low diversion level is selected below
+      const lvlRow = calc.near && calc.near.rows.find((w) => w.fl === ren.level);
+      const t = lvlRow && lvlRow.fl > 150 ? (ren.manual && num(ren.tas) > 0 ? num(ren.tas) : tasFor(lvlRow, calc.near)) : ((calc.near && calc.near.tas) || ofp.cruiseTas || 480);
+      const s = CRZ.shiftFromEtas(ren.eta1, ren.eta2, t), o = $("etaOut");
+      if (!s) { o.innerHTML = ""; return; }
+      const longer = s.longer === 1 ? a1 : a2;
+      const back = (longer === calc.behind);
+      o.innerHTML = `<div class="resbox">` + (s.longer === 0 ? `Same ETA: the EDP is the ETP.` :
+        `Difference ${V(Math.abs(s.dtMin) + " min")} ÷ 2 × ${(t / 60).toFixed(1)} NM/min <span class="s">(TAS ${t} kt)</span> = ${V(Math.round(s.shift) + " NM")}<br>${esc(longer.id)} takes longer, so move ${back ? "back" : "ahead"} along the route: type ${K(f2 + "/" + (back ? "-" : "") + Math.round(s.shift))} to make ${K(f3)}, then delete ${esc(f2)}.`) + `</div>`;
+    };
+    estimate(); etaCalc();
+    const live = () => { store.set("crz.ren", ren); compute(); estimate(); etaCalc(); drawMap(); $("renReset").hidden = false; };
+    $("eta1").addEventListener("input", (e) => { ren.eta1 = e.target.value; store.set("crz.ren", ren); etaCalc(); $("renReset").hidden = false; });
+    $("eta2").addEventListener("input", (e) => { ren.eta2 = e.target.value; store.set("crz.ren", ren); etaCalc(); $("renReset").hidden = false; });
+    $("rWd").addEventListener("input", (e) => { ren.windDir = e.target.value; ren.manual = true; live(); });
+    $("rWs").addEventListener("input", (e) => { ren.windKt = e.target.value; ren.manual = true; live(); });
+    $("rTas").addEventListener("input", (e) => { ren.tas = e.target.value; ren.manual = true; live(); });
+    $("rPt").addEventListener("change", (e) => { ren.windPt = e.target.value; ren.manual = false; store.set("crz.ren", ren); compute(); renderRen(); drawMap(); });
+    $("rLvl").addEventListener("change", (e) => { ren.level = +e.target.value; ren.manual = false; store.set("crz.ren", ren); compute(); renderRen(); drawMap(); });
+    $("toCf").addEventListener("click", () => {
+      const rr = calc.r; if (!rr.etp) return;
+      setEdto({ calc: "cf", dist: String(Math.round(Math.max(rr.etpDist1, rr.etpDist2))) });
+      showTab("edto");
+    });
+  }
+  const onEa = (k) => (e) => {
+    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); e.target.value = v;
+    ren[k] = v; ren.manual = false; ren.windPt = null; ren.eta1 = ren.eta2 = "";
+    store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap();
+  };
+  $("ea1").addEventListener("input", onEa("ea1"));
+  $("ea2").addEventListener("input", onEa("ea2"));
+  $("renReset").addEventListener("click", () => { ren = {}; store.set("crz.ren", ren); compute(); renderRen(); view = null; drawMap(); });
+
+  // ---------- map ----------
+  let LAND = null, view = null, proj = null, raf = 0;
+  function land() {
+    if (LAND || !window.WORLD_LAND_50) return LAND || [];
+    LAND = window.WORLD_LAND_50.map((d) => {
+      const pts = []; let x = 0, y = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (let i = 0; i < d.length; i += 2) {
+        x += d[i]; y += d[i + 1];
+        const lon = x / 100, lat = y / 100; pts.push(lon, lat);
+        if (lon < x0) x0 = lon; if (lon > x1) x1 = lon; if (lat < y0) y0 = lat; if (lat > y1) y1 = lat;
+      }
+      return { pts, x0, x1, y0, y1 };
+    });
+    return LAND;
+  }
+  function circle(c, radius) { const out = []; for (let b = 0; b <= 360; b += 4) out.push(CRZ.dest(c, b, radius)); return out; }
+  function drawMap() { cancelAnimationFrame(raf); raf = requestAnimationFrame(drawNow); }
+  function drawNow() {
+    const svg = $("map");
+    if (!ofp || !route || $("mapSec").hidden) return;
+    const W = svg.parentElement.clientWidth;
+    if (!W) { const v = $("mapSec").closest(".view"); if (!v || !v.hidden) setTimeout(drawMap, 60); return; }
+    const H = Math.round(Math.max(300, Math.min(560, W * 0.8)));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+
+    const rings = [];
+    const same = unchanged();
+    const ringApts = same ? ofpAlts().map(airport).filter(Boolean) : [calc && calc.a1, calc && calc.a2].filter(Boolean);
+    ringApts.forEach((a) => rings.push({ a, pts: circle(a, calc.R) }));
+    // the other en-route adequate airports (ERA) from the OFP, drawn faintly
+    const eraApts = ((ofp.edto && ofp.edto.adequate) || []).map(airport).filter((a) => a && !ringApts.some((x) => x.id === a.id));
+    const eraRings = eraApts.map((a) => ({ a, pts: circle(a, calc.R) }));
+    const r = calc && calc.r && !calc.r.error ? calc.r : null;
+    const midOnly = !r && calc && calc.r && calc.r.mid ? calc.r : null;
+    const eqRing = r ? circle(r.edp, r.edpDist1) : (midOnly ? circle(midOnly.mid, midOnly.half) : null);
+
+    // projection: equirectangular about the middle of the route (fine for a regional map)
+    if (!proj) {
+      const lats = ofp.points.map((p) => p.lat), lat0 = (Math.min(...lats) + Math.max(...lats)) / 2, lon0 = ofp.points[Math.floor(ofp.points.length / 2)].lon;
+      proj = { lat0, lon0, k: Math.cos(lat0 * Math.PI / 180) };
+    }
+    const P = (p) => [(((p.lon - proj.lon0 + 540) % 360) - 180) * proj.k, -(p.lat - proj.lat0)];
+    if (!view) {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      const grow = (p) => { const [x, y] = P(p); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; };
+      ofp.points.forEach(grow); rings.forEach((r) => r.pts.forEach(grow)); eraRings.forEach((r) => r.pts.forEach(grow));
+      if (eqRing) eqRing.forEach(grow);
+      view = { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: Math.min(W / ((x1 - x0) * 1.06 || 1), H / ((y1 - y0) * 1.06 || 1)), fit: true };
+    }
+    const S = (p) => { const [x, y] = P(p); return [W / 2 + (x - view.cx) * view.z, H / 2 + (y - view.cy) * view.z]; };
+    const path = (pts) => pts.map((p, i) => { const [x, y] = S(p); return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); }).join("");
+    const out = [];
+
+    // land
+    const lonW = proj.lon0 + (view.cx - W / 2 / view.z) / proj.k, lonE = proj.lon0 + (view.cx + W / 2 / view.z) / proj.k;
+    const latN = proj.lat0 - (view.cy - H / 2 / view.z), latS = proj.lat0 - (view.cy + H / 2 / view.z);
+    let d = "";
+    for (const r of land()) {
+      if (r.x1 < lonW || r.x0 > lonE || r.y1 < latS || r.y0 > latN) continue;
+      if ((r.x1 - r.x0) * view.z < 1.5 && (r.y1 - r.y0) * view.z < 1.5) continue;
+      let lx = null, ly = null, first = true;
+      for (let i = 0; i < r.pts.length; i += 2) {
+        const [x, y] = S({ lon: r.pts[i], lat: r.pts[i + 1] });
+        if (lx != null && Math.abs(x - lx) < 0.8 && Math.abs(y - ly) < 0.8 && i < r.pts.length - 2) continue;
+        d += (first ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1); first = false; lx = x; ly = y;
+      }
+      d += "Z";
+    }
+    out.push(`<path class="land" d="${d}"/>`);
+
+    // graticule
+    const span = Math.max(lonE - lonW, latN - latS), step = span > 60 ? 20 : span > 25 ? 10 : span > 10 ? 5 : span > 4 ? 2 : 1;
+    for (let lo = Math.ceil(lonW / step) * step; lo <= lonE; lo += step) { const [x] = S({ lon: lo, lat: 0 }); out.push(`<path class="grat" d="M${x.toFixed(1)} 0V${H}"/><text class="gl" x="${(x + 3).toFixed(1)}" y="${H - 4}">${Math.abs(lo)}${lo < 0 ? "W" : "E"}</text>`); }
+    for (let la = Math.ceil(latS / step) * step; la <= latN; la += step) { const [, y] = S({ lon: proj.lon0, lat: la }); out.push(`<path class="grat" d="M0 ${y.toFixed(1)}H${W}"/><text class="gl" x="3" y="${(y - 3).toFixed(1)}">${Math.abs(la)}${la < 0 ? "S" : "N"}</text>`); }
+
+    // 60 min rings & equi-distance circle
+    eraRings.forEach((r) => out.push(`<path class="ring era" d="${path(r.pts)}Z"/>`));
+    rings.forEach((r) => out.push(`<path class="ring" d="${path(r.pts)}Z"/>`));
+    if (eqRing) out.push(`<path class="eqring" d="${path(eqRing)}Z"/>`);
+
+    // labels are placed after all shapes, skipping any that would overlap
+    const labels = [], boxes = [];
+    const label = (p, text, cls, force) => labels.push({ p, text, cls: cls || "", force });
+
+    // renomination construction
+    if (r) {
+      out.push(`<path class="trk" d="${path([calc.a1, r.mid, calc.a2])}"/>`);
+      out.push(`<path class="bis" d="${path([r.mid, r.edp])}"/>`);
+    } else if (midOnly) {
+      out.push(`<path class="trk" d="${path([calc.a1, midOnly.mid, calc.a2])}"/>`);
+    }
+    // route, with the part outside both rings highlighted
+    out.push(`<path class="rte" d="${path(ofp.points)}"/>`);
+    if (r && calc.eep && calc.exp && calc.exp.s > calc.eep.s) {
+      const seg = [calc.eep];
+      route.pts.forEach((p, i) => { if (route.cum[i] > calc.eep.s && route.cum[i] < calc.exp.s) seg.push(p); });
+      seg.push(calc.exp);
+      out.push(`<path class="seg" d="${path(seg)}"/>`);
+    }
+    // OFP winds at the chosen level, drawn as wind barbs (staff points to where the wind comes from)
+    let windShown = 0;
+    if (mapWind.on) {
+      ofp.points.forEach((p) => {
+        const w = ((ofp.winds && ofp.winds[p.name]) || []).find((x) => x.fl === mapWind.fl);
+        if (!w) return;
+        const [x, y] = S(p);
+        out.push(barb(x, y, w.dir, w.kt, p.lat < 0));
+        const t = w.dir * Math.PI / 180;
+        labels.push({ p, text: (w.oat > 0 ? "+" : w.oat < 0 ? "−" : "") + Math.abs(w.oat), cls: "w", at: [x - Math.sin(t) * 14, y + Math.cos(t) * 14] });
+        windShown++;
+      });
+    }
+    // waypoints
+    ofp.points.forEach((p, i) => {
+      const [x, y] = S(p), end = i === 0 || i === ofp.points.length - 1;
+      if (end) { out.push(`<circle class="end" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`); label(p, p.name, "", true); }
+      else if (!p.pseudo) { out.push(`<circle class="wp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`); label(p, p.name, "m"); }
+    });
+    // alternates
+    eraApts.forEach((a) => { const [x, y] = S(a); out.push(`<rect class="apt era" x="${(x - 4).toFixed(1)}" y="${(y - 4).toFixed(1)}" width="8" height="8" rx="2"/>`); if (a.id !== ofp.depIcao && a.id !== ofp.destIcao) label(a, a.id, "e"); });
+    ringApts.forEach((a) => { const [x, y] = S(a); out.push(`<rect class="apt" x="${(x - 5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="10" height="10" rx="2"/>`); label(a, a.id, "k", true); });
+    // EDTO points
+    const dot = (p, cls, text, tcls) => { const [x, y] = S(p); out.push(`<circle class="pt ${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`); label(p, text, tcls, true); };
+    if (r) {
+      const [mx, my] = S(r.mid); out.push(`<path class="pt edp" d="M${mx - 5} ${my}L${mx} ${my - 5}L${mx + 5} ${my}L${mx} ${my + 5}Z"/>`); label(r.mid, "halfway", "g", true);
+      if (calc.eep) dot(calc.eep, "ee", "EEP", "");
+      if (calc.exp) dot(calc.exp, "ee", "EXP", "");
+      const apart = r.etp ? Math.hypot(S(r.etp)[0] - S(r.edp)[0], S(r.etp)[1] - S(r.edp)[1]) : 0;
+      dot(r.edp, "edp", r.etp && apart < 4 ? (Math.abs(r.etpShift) < 1 ? "EDP = ETP" : "EDP / ETP") : "EDP", "g");
+      if (r.etp && apart >= 4) dot(r.etp, "etp", "ETP", "r");
+    } else if (midOnly) {
+      const [mx, my] = S(midOnly.mid); out.push(`<path class="pt edp" d="M${mx - 5} ${my}L${mx} ${my - 5}L${mx + 5} ${my}L${mx} ${my + 5}Z"/>`); label(midOnly.mid, "direct EDP", "g", true);
+    }
+    if (same) { const o = (ofp.edto.points || []).find((p) => /^ETP/.test(p.name) && p.lat != null); if (o) { const [x, y] = S(o); out.push(`<circle class="pt ofp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7"/>`); label(o, "OFP " + o.name, "m", true); } }
+
+    // place labels: forced ones first, then waypoint names where there is room
+    labels.sort((a, b) => (b.force ? 1 : 0) - (a.force ? 1 : 0));
+    for (const L of labels) {
+      const [x, y] = L.at || S(L.p), w = L.text.length * 6.6 + 4, hgt = 13;
+      if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+      const tries = L.at ? [[0, 4, "middle"]] : [[8, 4, "start"], [-8, 4, "end"], [0, -9, "middle"], [0, 17, "middle"], [8, -8, "start"], [8, 15, "start"], [-8, -8, "end"], [-8, 15, "end"]];
+      for (const [dx, dy, anchor] of tries) {
+        const bx = anchor === "start" ? x + dx : anchor === "end" ? x + dx - w : x - w / 2, by = y + dy - hgt + 2;
+        const box = [bx, by, bx + w, by + hgt];
+        if (boxes.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue;
+        boxes.push(box);
+        out.push(`<text class="${L.cls}" x="${(x + dx).toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}">${esc(L.text)}</text>`);
+        break;
+      }
+    }
+    svg.innerHTML = out.join("");
+    $("mapSub").textContent = `60 min ring = ${calc.R} NM`;
+    $("mapLegend").innerHTML = `<span><i style="background:var(--accent)"></i>EDTO alternate, 60 min ring</span>` +
+      (mapWind.on ? `<span><i style="background:var(--wind)"></i>${windShown ? `OFP wind FL${pad(mapWind.fl, 3)}: pennant 50, long barb 10, short 5 kt; number = temperature °C` : `No OFP wind at FL${pad(mapWind.fl, 3)}`}</span>` : "") +
+      (eraApts.length ? `<span><i style="background:var(--accent);opacity:.35"></i>Other ERA (${eraApts.map((a) => esc(a.id)).join(" ")})</span>` : "") +
+      (r ? `<span><i style="background:var(--warn)"></i>EEP / EXP</span><span><i style="background:#16a34a"></i>halfway fix, 90° line, EDP &amp; equi-distance circle</span><span><i style="background:var(--err)"></i>ETP, EDTO segment</span>` :
+        (midOnly ? `<span><i style="background:#16a34a"></i>direct EDP &amp; equi-distance circle</span>` : ""));
+  }
+  // pan and zoom
+  (function () {
+    const svg = $("map"), ptr = new Map();
+    let last = null;
+    const at = (e) => { const b = svg.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    const zoomAt = (f, x, y) => {
+      if (!view) return;
+      const W = svg.clientWidth, H = svg.clientHeight, z = Math.max(2, Math.min(4000, view.z * f));
+      // keep the map point under (x, y) fixed
+      view.cx += (x - W / 2) * (1 / view.z - 1 / z); view.cy += (y - H / 2) * (1 / view.z - 1 / z); view.z = z; view.fit = false;
+      drawMap();
+    };
+    svg.addEventListener("pointerdown", (e) => { svg.setPointerCapture(e.pointerId); ptr.set(e.pointerId, at(e)); last = null; });
+    svg.addEventListener("pointermove", (e) => {
+      if (!ptr.has(e.pointerId) || !view) return;
+      const prev = ptr.get(e.pointerId), cur = at(e); ptr.set(e.pointerId, cur);
+      if (ptr.size === 1) { view.cx -= (cur[0] - prev[0]) / view.z; view.cy -= (cur[1] - prev[1]) / view.z; view.fit = false; drawMap(); }
+      else if (ptr.size === 2) {
+        const [a, b] = [...ptr.values()], dd = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        if (last) zoomAt(dd / last, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+        last = dd;
+      }
+    });
+    const up = (e) => { ptr.delete(e.pointerId); last = null; };
+    svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
+    svg.addEventListener("wheel", (e) => { e.preventDefault(); const [x, y] = at(e); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, x, y); }, { passive: false });
+    $("zIn").addEventListener("click", () => zoomAt(1.5, svg.clientWidth / 2, svg.clientHeight / 2));
+    $("zOut").addEventListener("click", () => zoomAt(1 / 1.5, svg.clientWidth / 2, svg.clientHeight / 2));
+    $("zFit").addEventListener("click", () => { view = null; drawMap(); });
+    window.addEventListener("resize", () => { if (view && view.fit) view = null; drawMap(); });
+    window.addEventListener("tabshow", (e) => { if (e.detail === "crz") { if (view && view.fit) view = null; drawMap(); } });
+  })();
+
+  document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.open) setEdto({ calc: b.dataset.open });
+    showTab(b.dataset.goto);
+  }));
+  // ---------- wind layer ----------
+  let mapWind = Object.assign({ on: false, fl: null }, store.get("crz.mapWind") || {});
+  /** Standard wind barb at (x, y): staff toward the wind's origin, feathers from the outer end. */
+  function barb(x, y, dir, kt, south) {
+    const v = Math.round(kt / 5) * 5;
+    if (v < 5) return `<circle class="barb calm" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"/>`;
+    const t = dir * Math.PI / 180, ux = Math.sin(t), uy = -Math.cos(t);          // outward along the staff
+    const side = south ? -1 : 1, px = -uy * side, py = ux * side;                // feathers: right of the staff in the north, left in the south
+    const LEN = 26, GAP = 4.5, F = 11;
+    const at = (d) => [x + ux * d, y + uy * d];
+    const f = (n) => n.toFixed(1);
+    let d = LEN, rest = v, out = `M${f(x)} ${f(y)}L${f(at(LEN)[0])} ${f(at(LEN)[1])}`, tri = "";
+    while (rest >= 50) { const a = at(d), b = at(d - 6), c = [a[0] - ux * 3 + px * F, a[1] - uy * 3 + py * F]; tri += `M${f(a[0])} ${f(a[1])}L${f(c[0])} ${f(c[1])}L${f(b[0])} ${f(b[1])}Z`; d -= 7.5; rest -= 50; }
+    if (v % 50 === 5 && v < 50 && rest === 5) d -= GAP;                           // a lone short barb sits in from the end
+    while (rest >= 10) { const a = at(d); out += `M${f(a[0])} ${f(a[1])}L${f(a[0] + ux * 3.5 + px * F)} ${f(a[1] + uy * 3.5 + py * F)}`; d -= GAP; rest -= 10; }
+    if (rest >= 5) { const a = at(d); out += `M${f(a[0])} ${f(a[1])}L${f(a[0] + ux * 1.75 + px * F / 2)} ${f(a[1] + uy * 1.75 + py * F / 2)}`; }
+    return `<path class="barb" style="fill:none" d="${out}"/>` + (tri ? `<path class="barb" d="${tri}"/>` : "");
+  }
+  function renderWindCtl() {
+    const sel = $("windFl");
+    const levels = [...new Set(ofp ? ofp.points.flatMap((p) => ((ofp.winds && ofp.winds[p.name]) || []).map((w) => w.fl)) : [])].sort((a, b) => b - a);
+    if (!levels.includes(mapWind.fl)) mapWind.fl = levels.includes(ofp && ofp.cruiseFL) ? ofp.cruiseFL : (levels[0] ?? null);
+    const count = (fl) => ofp.points.filter((p) => ((ofp.winds && ofp.winds[p.name]) || []).some((w) => w.fl === fl)).length;
+    sel.innerHTML = levels.map((fl) => `<option value="${fl}"${fl === mapWind.fl ? " selected" : ""}>FL${pad(fl, 3)}${ofp.cruiseFL === fl ? " · plan" : ""} · ${count(fl)} pts</option>`).join("") || "<option>no wind table</option>";
+    sel.disabled = !levels.length || !mapWind.on; $("windOn").disabled = !levels.length;
+    $("windOn").checked = !!mapWind.on && levels.length > 0;
+    if (!levels.length) mapWind.on = false;
+  }
+  $("windOn").addEventListener("change", (e) => { mapWind.on = e.target.checked; store.set("crz.mapWind", mapWind); renderWindCtl(); drawMap(); });
+  $("windFl").addEventListener("change", (e) => { mapWind.fl = +e.target.value; store.set("crz.mapWind", mapWind); drawMap(); });
+
+  function renderAll() { proj = null; compute(); renderSummary(); renderRen(); if (ofp) renderWindCtl(); drawMap(); }
+  renderAll();
+})();
+</script>
+<script>
+// QRH tab: chart tables, drawn from the same data the calculators use so the two cannot disagree.
+(function(){
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const n0 = (v) => v.toLocaleString("en-US");
+  const sg = (v) => (v == null ? "–" : (v < 0 ? "−" : "+") + Math.abs(v).toFixed(1));
+  const alt = (tbl) => {
+    const ws = tbl.weights.slice().reverse();
+    return `<table class="cht"><thead><tr><th>Weight (1000 kg)</th><th>ISA+10 &amp; below</th><th>ISA+15</th><th>ISA+20</th></tr></thead><tbody>` +
+      ws.map((w) => { const i = tbl.weights.indexOf(w); return `<tr><td class="mono"><b>${w}</b></td>${[0, 1, 2].map((c) => `<td class="mono">${n0(tbl.alt[c][i])}</td>`).join("")}</tr>`; }).join("") + `</tbody></table>`;
+  };
+  const d = PERF.B738.altitudeCapability, cf = PERF.B738.criticalFuel;
+  $("qrhLrc").innerHTML = alt({ weights: d.weights, alt: d.lrc.alt });
+  $("qrhFix").innerHTML = alt({ weights: d.weights, alt: d.kias310.alt });
+  $("qrhB24").innerHTML = alt(PERF.B738_PI_B24);
+  $("qrhCf").innerHTML = `<table class="cht"><thead><tr class="grp"><th rowspan="2">Dist NM</th><th colspan="3">Wind, 1000 kg</th><th colspan="${cf.weights.length}">Nil-wind fuel by weight, 1000 kg</th></tr><tr><th>50 TWC</th><th>50 HWC</th><th>100 HWC</th>${cf.weights.map((w) => `<th>${w}</th>`).join("")}</tr></thead><tbody>` +
+    cf.distances.map((dist, i) => `<tr><td class="mono"><b>${n0(dist)}</b></td>${cf.windCorr[i].map((v) => `<td class="mono">${sg(v)}</td>`).join("")}${cf.fuel[i].map((v) => `<td class="mono">${v == null ? "–" : v.toFixed(1)}</td>`).join("")}</tr>`).join("") + `</tbody></table>`;
 })();
 </script>
 </body>
