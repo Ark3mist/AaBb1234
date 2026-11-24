@@ -115,6 +115,21 @@
     return { pts, cum, total, at };
   }
 
+  /** Sampled WGS84 great-circle route between two airports {id, lat, lon}. */
+  function directRoute(a, b, stepNm) {
+    const total = dist(a, b);
+    if (total < 1) return null;
+    const brg = bearing(a, b), step = stepNm > 0 ? stepNm : 50;
+    const n = Math.max(1, Math.ceil(total / step));
+    const pts = [{ name: a.id, lat: a.lat, lon: a.lon, pseudo: false }];
+    for (let i = 1; i < n; i++) {
+      const p = dest(a, brg, (total * i) / n);
+      pts.push({ name: "GC" + i, lat: p.lat, lon: p.lon, pseudo: true });
+    }
+    pts.push({ name: b.id, lat: b.lat, lon: b.lon, pseudo: false });
+    return { pts, dist: total, bearing: brg };
+  }
+
   /** All along-route distances where f changes sign, found by 5 NM scan then bisection. */
   function crossings(route, f) {
     const out = [], STEP = 5;
@@ -175,7 +190,7 @@
 
     // The line at 90 degrees through the halfway point is where both airports are equally far, so the EDP is where the route's distance to EA1 equals its distance to EA2.
     const xs = crossings(route, (p) => dist(p, ea1) - dist(p, ea2));
-    if (!xs.length) return { error: "The route never passes a point equally distant from " + ea1.id + " and " + ea2.id + ". Check the airport order and the route.", trackT, trackDist, half, mid };
+    if (!xs.length) return { error: "The route never passes a point equally distant from " + ea1.id + " and " + ea2.id + ". Check the airport order and the route.", trackT, trackM: toMag(trackT, ea1), trackDist, half, mid };
     const edp = xs.map((x) => route.at(x.s)).sort((a, b) => dist(a, mid) - dist(b, mid))[0];
     const radialT = bearing(mid, edp), radialDist = dist(mid, edp);
     // Is the route to the right or left of the EA1 -> EA2 track? (handout: right = add 90, left = subtract 90)
@@ -464,7 +479,7 @@
     return out;
   }
 
-  const CRZ = { R_NM, norm360, dist, bearing, dest, groundSpeed, fmtLatLon, makeRoute, crossings, ringCrossings, legAt, renominate, shiftFromEtas, parseOFP };
+  const CRZ = { R_NM, norm360, dist, bearing, dest, groundSpeed, fmtLatLon, makeRoute, directRoute, crossings, ringCrossings, legAt, renominate, shiftFromEtas, parseOFP };
   if (typeof module === "object" && module.exports) module.exports = CRZ;
   else root.CRZ = CRZ;
 })(typeof self !== "undefined" ? self : this);

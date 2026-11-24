@@ -134,8 +134,12 @@ test("renomination: both airports ahead of the route still gives an ETP", () => 
 test("renomination: errors", () => {
   const route = C.makeRoute(ofp.points);
   assert.ok(C.renominate(route, VCBI, VCBI, {}).error);
-  // two airports far to the north-west: nowhere on the route is equidistant
-  assert.ok(C.renominate(route, { id: "AAAA", lat: 40, lon: 10 }, { id: "BBBB", lat: 41, lon: 30 }, {}).error);
+  // two airports whose bisector does not cross the route still return direct-track halfway data
+  const WMKK = { id: "WMKK", lat: 2.7456, lon: 101.7099 }, VVTS = { id: "VVTS", lat: 10.8188, lon: 106.6519 };
+  const off = C.renominate(route, WMKK, VVTS, {});
+  assert.ok(off.error);
+  assert.ok(off.mid && Number.isFinite(off.trackM) && Number.isFinite(off.half));
+  near(C.dist(off.mid, WMKK), C.dist(off.mid, VVTS), 0.01);
 });
 
 test("shift from FMC ETAs (handout: 3 min at 480 kt = 12 NM)", () => {
@@ -143,4 +147,22 @@ test("shift from FMC ETAs (handout: 3 min at 480 kt = 12 NM)", () => {
   assert.equal(s.dtMin, -3); near(s.shift, 12, 1e-9); assert.equal(s.longer, 2);
   assert.equal(C.shiftFromEtas("2359", "0002", 480).dtMin, -3);
   assert.equal(C.shiftFromEtas("15", "1534", 480), null);
+});
+
+test("directRoute: great-circle route between two airports produces valid route and EDP", () => {
+  const WMKK = { id: "WMKK", lat: 2.7456, lon: 101.7099 }, VVTS = { id: "VVTS", lat: 10.8188, lon: 106.6519 };
+  assert.equal(C.directRoute(WMKK, WMKK), null);
+  const gc = C.directRoute(WMKK, VVTS);
+  assert.ok(gc && gc.pts.length > 2);
+  assert.equal(gc.pts[0].name, "WMKK"); assert.equal(gc.pts[0].pseudo, false);
+  assert.equal(gc.pts[gc.pts.length - 1].name, "VVTS"); assert.equal(gc.pts[gc.pts.length - 1].pseudo, false);
+  assert.ok(gc.pts.slice(1, -1).every((p) => p.pseudo === true));
+  const route = C.makeRoute(gc.pts);
+  near(route.total, gc.dist, 0.05);
+  const r = C.renominate(route, WMKK, VVTS, { tas: 460, windKt: 0 });
+  assert.equal(r.error, undefined);
+  near(r.edpDist1, gc.dist / 2, 0.1);
+  near(r.edpDist2, gc.dist / 2, 0.1);
+  assert.equal(r.edpLeg.before.name, "WMKK");
+  assert.equal(r.edpLeg.after.name, "VVTS");
 });

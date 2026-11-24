@@ -253,7 +253,7 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
 
   <!-- ================= CRZ ================= -->
   <div class="view" data-view="crz" hidden>
-    <header class="vhead"><div class="vt" role="heading" aria-level="2">Cruise<span class="src">OFP</span></div><p class="vs">Import the OFP, see the route and the 60 minute rings, and re-nominate EDTO alternates.</p></header>
+    <header class="vhead"><div class="vt" role="heading" aria-level="2">Cruise<span class="src">OFP</span></div><p class="vs">Import an OFP or pair two airports to see the great-circle route, 60 minute rings, and EDTO alternates.</p></header>
     <section id="fpSec">
       <h2><span class="t">Flight plan</span> <span><button class="ofpbtn" id="ofpPick" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>Import OFP</button> <button class="link" id="ofpPasteBtn" type="button">Paste text</button> <button class="link danger" id="ofpClear" type="button" hidden>Clear</button></span></h2>
       <input type="file" id="ofpFile" accept="application/pdf,.pdf,text/plain,.txt" hidden>
@@ -262,7 +262,13 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
         <div class="btnrow"><button type="button" id="ofpRead">Read pasted text</button><button type="button" id="ofpPasteX">Cancel</button></div>
       </div>
       <div class="msg" id="ofpMsg" hidden></div>
-      <div class="hint" id="fpEmpty" style="margin-top:0">Load the briefing package (PDF) or paste its text. It is read <b>on this device only</b>: nothing is uploaded, and it works offline. The app reads the header, the route, the nav log, the coordinates list, the wind table and the EDTO information.</div>
+      <div class="hint" id="fpEmpty" style="margin-top:0">Load the briefing package (PDF) or paste its text (read <b>on this device only</b>, works offline), or pair any two airports below to plot a direct great-circle route.</div>
+      <div id="pairBox">
+        <div class="r2" style="margin-top:8px">
+          <div><label for="pairDep">Departure</label><input id="pairDep" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO / IATA"><div class="aptname" id="pairDepName"></div></div>
+          <div><label for="pairDst">Destination</label><input id="pairDst" class="mono" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ICAO / IATA"><div class="aptname" id="pairDstName"></div></div>
+        </div>
+      </div>
       <div id="fpBody" hidden></div>
     </section>
 
@@ -1074,15 +1080,69 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
   $("ofpPasteBtn").addEventListener("click", () => { $("ofpPaste").hidden = false; $("ofpText").focus(); });
   $("ofpPasteX").addEventListener("click", () => { $("ofpPaste").hidden = true; });
   $("ofpRead").addEventListener("click", () => { if (loadText($("ofpText").value)) { $("ofpPaste").hidden = true; $("ofpText").value = ""; } });
-  $("ofpClear").addEventListener("click", () => { ofp = null; ren = {}; store.set("crz.ofp", null); store.set("crz.ren", ren); ofpMsg(""); renderAll(); });
+  const nameOf = (id, code, a) => { const el = $(id); el.className = "aptname" + (code && !a ? " bad" : ""); el.innerHTML = a ? aptLabel(a) : code ? (code.length < 3 ? "" : "Not in the airport list") : ""; };
+  function onPair(e) {
+    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); e.target.value = v;
+    const c1 = $("pairDep").value, c2 = $("pairDst").value;
+    const a1 = airport(c1), a2 = airport(c2);
+    nameOf("pairDepName", c1, a1); nameOf("pairDstName", c2, a2);
+    if (!a1 || !a2) {
+      if (ofp && ofp.manual) { ofp = null; ren = {}; store.set("crz.ofp", null); store.set("crz.ren", ren); renderAll(); }
+      ofpMsg("");
+      return;
+    }
+    const gc = CRZ.directRoute(a1, a2);
+    if (!gc) { ofpMsg("Choose two different airports.", true); return; }
+    ofpMsg("");
+    ofp = {
+      manual: true,
+      depIcao: a1.id, depIata: a1.iata || "",
+      destIcao: a2.id, destIata: a2.iata || "",
+      grdDist: Math.round(gc.dist),
+      initTrackT: gc.bearing,
+      points: gc.pts,
+      edto: { alternates: [a1.id, a2.id], points: [], ruleMin: 120 },
+      winds: {},
+      warnings: [],
+    };
+    ren = {};
+    store.set("crz.ofp", ofp); store.set("crz.ren", ren);
+    view = null;
+    renderAll();
+  }
+  $("pairDep").addEventListener("input", onPair);
+  $("pairDst").addEventListener("input", onPair);
+  if (ofp && ofp.manual) {
+    $("pairDep").value = ofp.depIcao || ""; $("pairDst").value = ofp.destIcao || "";
+    nameOf("pairDepName", ofp.depIcao, airport(ofp.depIcao));
+    nameOf("pairDstName", ofp.destIcao, airport(ofp.destIcao));
+  }
+  $("ofpClear").addEventListener("click", () => {
+    ofp = null; ren = {}; store.set("crz.ofp", null); store.set("crz.ren", ren);
+    $("pairDep").value = ""; $("pairDst").value = "";
+    nameOf("pairDepName", "", null); nameOf("pairDstName", "", null);
+    ofpMsg(""); renderAll();
+  });
 
   // ---------- flight plan summary ----------
   function renderSummary() {
-    const has = !!ofp;
+    const has = !!ofp, manual = !!(ofp && ofp.manual);
     $("fpEmpty").hidden = has; $("fpBody").hidden = !has; $("ofpClear").hidden = !has;
+    $("pairBox").hidden = has && !manual;
     ["mapSec", "renSec", "edtoPtSec", "wpSec"].forEach((id) => { $(id).hidden = !has; });
     if (!has) return;
     const o = ofp, dep = airport(o.depIcao), dst = airport(o.destIcao), e = o.edto || {};
+    if (manual) {
+      $("edtoPtSec").hidden = true; $("wpSec").hidden = true;
+      const trkT = o.initTrackT != null ? o.initTrackT : (dep && dst ? CRZ.bearing(dep, dst) : null);
+      const trkM = trkT != null && dep ? CRZ.norm360(trkT - magVar(dep.lat, dep.lon)) : null;
+      const rows = [];
+      const row = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
+      row("Distance", o.grdDist ? `<span class="mono">${o.grdDist.toLocaleString("en-US")}</span> NM great circle` : "");
+      row("Initial track", trkM != null ? `<span class="mono">${deg(trkM)}</span> <span class="s">(${deg(trkT)} true)</span>` : "");
+      $("fpBody").innerHTML = `<dl class="kv" style="margin-top:8px">${rows.join("")}</dl>`;
+      return;
+    }
     const mo = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const rows = [];
     const row = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
@@ -1187,13 +1247,23 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
   function renderRen() {
     if (!ofp) return;
     $("ea1").value = ren.ea1 || ""; $("ea2").value = ren.ea2 || "";
-    const nameOf = (id, code, a) => { const el = $(id); el.className = "aptname" + (code && !a ? " bad" : ""); el.innerHTML = a ? aptLabel(a) : code ? (code.length < 3 ? "" : "Not in the airport list") : ""; };
     nameOf("ea1Name", ren.ea1, calc && calc.a1); nameOf("ea2Name", ren.ea2, calc && calc.a2);
     $("renReset").hidden = unchanged() && !ren.manual && !ren.eta1 && !ren.eta2 && !ren.windPt && (!calc || ren.level === calc.cruiseLevel);
     const el = $("renOut");
     if (!calc || !calc.a1 || !calc.a2) { el.innerHTML = `<div class="hint">Enter two airports (ICAO or IATA code) to see the 60 minute rings and how to find the new ETP.</div>`; return; }
     const r = calc.r, a1 = calc.a1, a2 = calc.a2;
-    if (r.error) { el.innerHTML = `<div class="note bad"><b>No EDP.</b> ${esc(r.error)}</div>`; return; }
+    if (r.error) {
+      if (r.mid) {
+        const closer = CRZ.dist(route.at(0), a1) < CRZ.dist(route.at(0), a2) ? a1.id : a2.id;
+        const halfN = Math.round(r.half);
+        const K = (s) => `<span class="key">${esc(s)}</span>`, V = (s) => `<span class="val">${s}</span>`;
+        el.innerHTML = `<div class="note"><b>Not on this route.</b> Every point on the loaded route is closer to ${esc(closer)}, so the 90° bisector between ${esc(a1.id)} and ${esc(a2.id)} never crosses the route. Showing the direct-track halfway point (EDP) instead.</div>` +
+          `<div class="resbox">Direct EDP ${V(CRZ.fmtLatLon(r.mid))}<br>${V(nm(r.half))} to each airport · track ${V(deg(r.trackM))} <span class="s">(${deg(r.trackT)} true)</span> · total ${V(nm(r.trackDist))}<br><span class="s">FMC halfway fix:</span> ${K(a2.id + "/-" + halfN)}</div>`;
+      } else {
+        el.innerHTML = `<div class="note bad"><b>No EDP.</b> ${esc(r.error)}</div>`;
+      }
+      return;
+    }
     const K = (s) => `<span class="key">${esc(s)}</span>`, V = (s) => `<span class="val">${s}</span>`;
     const f1 = a2.id.slice(0, 3) + "01", f2 = a2.id.slice(0, 3) + "02", f3 = a2.id.slice(0, 3) + "03";
     const halfN = Math.round(r.half), radDist = Math.round(r.radialDist);
@@ -1391,9 +1461,12 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
 
     // renomination construction
     const r = calc && calc.r && !calc.r.error ? calc.r : null;
+    const midOnly = !r && calc && calc.r && calc.r.mid ? calc.r : null;
     if (r) {
       out.push(`<path class="trk" d="${path([calc.a1, r.mid, calc.a2])}"/>`);
       out.push(`<path class="bis" d="${path([r.mid, r.edp])}"/>`);
+    } else if (midOnly) {
+      out.push(`<path class="trk" d="${path([calc.a1, midOnly.mid, calc.a2])}"/>`);
     }
     // route, with the part outside both rings highlighted
     out.push(`<path class="rte" d="${path(ofp.points)}"/>`);
@@ -1434,6 +1507,8 @@ section>h2:first-child::before{top:0;bottom:0;height:auto;border-radius:9px 0 0 
       const apart = r.etp ? Math.hypot(S(r.etp)[0] - S(r.edp)[0], S(r.etp)[1] - S(r.edp)[1]) : 0;
       dot(r.edp, "edp", r.etp && apart < 4 ? (Math.abs(r.etpShift) < 1 ? "EDP = ETP" : "EDP / ETP") : "EDP", "g");
       if (r.etp && apart >= 4) dot(r.etp, "etp", "ETP", "r");
+    } else if (midOnly) {
+      const [mx, my] = S(midOnly.mid); out.push(`<path class="pt edp" d="M${mx - 5} ${my}L${mx} ${my - 5}L${mx + 5} ${my}L${mx} ${my + 5}Z"/>`); label(midOnly.mid, "direct EDP", "g", true);
     }
     if (same) { const o = (ofp.edto.points || []).find((p) => /^ETP/.test(p.name) && p.lat != null); if (o) { const [x, y] = S(o); out.push(`<circle class="pt ofp" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7"/>`); label(o, "OFP " + o.name, "m", true); } }
 
